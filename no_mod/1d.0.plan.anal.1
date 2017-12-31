@@ -1,0 +1,27 @@
+Aggregate  (cost=1151351.00..1151352.00 rows=1 width=68) (actual time=0.248..0.248 rows=1 loops=1)
+  ->  Merge Join  (cost=1146887.00..1151351.00 rows=4455 width=45) (actual time=0.236..0.239 rows=4 loops=1)
+        Merge Cond: (ct.id = mc.company_type_id)
+        ->  Index Scan using company_type_pkey on company_type ct  (cost=0.00..8.00 rows=1 width=4) (actual time=0.006..0.007 rows=1 loops=1)
+              Filter: ((kind)::text = 'production companies'::text)
+              Rows Removed by Filter: 3
+        ->  Sort  (cost=1146887.00..1146887.00 rows=17822 width=49) (actual time=0.215..0.221 rows=78 loops=1)
+              Sort Key: mc.company_type_id
+              Sort Method: quicksort  Memory: 34kB
+              ->  Nested Loop  (cost=0.00..1146887.00 rows=17822 width=49) (actual time=0.040..0.172 rows=78 loops=1)
+                    ->  Nested Loop  (cost=0.00..1059566.00 rows=6717 width=29) (actual time=0.026..0.063 rows=6 loops=1)
+                          ->  Nested Loop  (cost=0.00..1035140.00 rows=12213 width=4) (actual time=0.013..0.018 rows=10 loops=1)
+                                ->  Seq Scan on info_type it  (cost=0.00..113.00 rows=1 width=4) (actual time=0.009..0.009 rows=1 loops=1)
+                                      Filter: ((info)::text = 'bottom 10 rank'::text)
+                                      Rows Removed by Filter: 112
+                                ->  Index Scan using info_type_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.00..690018.00 rows=345009 width=8) (actual time=0.003..0.005 rows=10 loops=1)
+                                      Index Cond: (info_type_id = it.id)
+                          ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=25) (actual time=0.004..0.004 rows=1 loops=10)
+                                Index Cond: (id = mi_idx.movie_id)
+                                Filter: (production_year > 2000)
+                                Rows Removed by Filter: 0
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.00..10.00 rows=3 width=32) (actual time=0.009..0.016 rows=13 loops=6)
+                          Index Cond: (movie_id = t.id)
+                          Filter: (note !~~ '%(as Metro-Goldwyn-Mayer Pictures)%'::text)
+                          Rows Removed by Filter: 2
+Planning time: 0.762 ms
+Execution time: 0.291 ms

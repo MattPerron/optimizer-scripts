@@ -1,0 +1,41 @@
+Aggregate  (cost=1948940.42..1948941.42 rows=1 width=96) (actual time=18003.361..18003.361 rows=1 loops=1)
+  ->  Nested Loop  (cost=345201.00..1948940.42 rows=18 width=65) (actual time=203.230..18002.518 rows=410 loops=1)
+        ->  Hash Join  (cost=345201.00..1948940.42 rows=18 width=60) (actual time=203.220..17999.784 rows=410 loops=1)
+              Hash Cond: (mi.info_type_id = it1.id)
+              ->  Nested Loop  (cost=345087.00..1946846.42 rows=1998 width=64) (actual time=17.104..17990.424 rows=82408 loops=1)
+                    ->  Nested Loop  (cost=345045.00..1938908.42 rows=63 width=14) (actual time=17.093..17918.255 rows=3435 loops=1)
+                          ->  Nested Loop  (cost=345045.00..1938902.00 rows=29093 width=18) (actual time=17.022..15367.069 rows=858842 loops=1)
+                                ->  Nested Loop  (cost=345009.00..1035140.00 rows=12213 width=10) (actual time=16.984..203.400 rows=459925 loops=1)
+                                      ->  Seq Scan on info_type it2  (cost=0.00..113.00 rows=1 width=4) (actual time=0.007..0.011 rows=1 loops=1)
+                                            Filter: ((info)::text = 'votes'::text)
+                                            Rows Removed by Filter: 112
+                                      ->  Bitmap Heap Scan on movie_info_idx mi_idx  (cost=345009.00..690018.00 rows=345009 width=14) (actual time=16.975..98.495 rows=459925 loops=1)
+                                            Recheck Cond: (info_type_id = it2.id)
+                                            Heap Blocks: exact=7934
+                                            ->  Bitmap Index Scan on info_type_id_movie_info_idx  (cost=0.00..345009.00 rows=345009 width=0) (actual time=16.002..16.002 rows=459925 loops=1)
+                                                  Index Cond: (info_type_id = it2.id)
+                                ->  Bitmap Heap Scan on cast_info ci  (cost=36.00..72.00 rows=2 width=8) (actual time=0.022..0.032 rows=2 loops=459925)
+                                      Recheck Cond: (movie_id = mi_idx.movie_id)
+                                      Filter: (note = ANY ('{(producer),"(executive producer)"}'::text[]))
+                                      Rows Removed by Filter: 28
+                                      Heap Blocks: exact=13220636
+                                      ->  Bitmap Index Scan on movie_id_cast_info  (cost=0.00..36.00 rows=36 width=0) (actual time=0.003..0.003 rows=30 loops=459925)
+                                            Index Cond: (movie_id = mi_idx.movie_id)
+                          ->  Index Scan using name_pkey on name n  (cost=0.00..2.00 rows=9062 width=4) (actual time=0.003..0.003 rows=0 loops=858842)
+                                Index Cond: (id = ci.person_id)
+                                Filter: ((name ~~ '%Tim%'::text) AND ((gender)::text = 'm'::text))
+                                Rows Removed by Filter: 1
+                    ->  Bitmap Heap Scan on movie_info mi  (cost=42.00..84.00 rows=42 width=50) (actual time=0.006..0.015 rows=24 loops=3435)
+                          Recheck Cond: (movie_id = mi_idx.movie_id)
+                          Heap Blocks: exact=28863
+                          ->  Bitmap Index Scan on movie_id_movie_info  (cost=0.00..42.00 rows=42 width=0) (actual time=0.004..0.004 rows=24 loops=3435)
+                                Index Cond: (movie_id = mi_idx.movie_id)
+              ->  Hash  (cost=113.00..113.00 rows=1 width=4) (actual time=0.014..0.014 rows=1 loops=1)
+                    Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                    ->  Seq Scan on info_type it1  (cost=0.00..113.00 rows=1 width=4) (actual time=0.011..0.012 rows=1 loops=1)
+                          Filter: ((info)::text = 'budget'::text)
+                          Rows Removed by Filter: 112
+        ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=2528312 width=21) (actual time=0.005..0.005 rows=1 loops=410)
+              Index Cond: (id = mi.movie_id)
+Planning time: 2.465 ms
+Execution time: 18003.434 ms

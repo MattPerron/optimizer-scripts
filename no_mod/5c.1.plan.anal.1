@@ -1,0 +1,34 @@
+Aggregate  (cost=7059749.32..7059750.32 rows=1 width=32) (actual time=1042.693..1042.693 rows=1 loops=1)
+  ->  Nested Loop  (cost=2609175.34..7059749.32 rows=72494 width=17) (actual time=1029.318..1042.549 rows=669 loops=1)
+        ->  Nested Loop  (cost=2609175.34..7057182.34 rows=72494 width=21) (actual time=1029.274..1041.754 rows=669 loops=1)
+              ->  Merge Join  (cost=2609133.34..2660260.34 rows=51127 width=25) (actual time=1029.248..1029.538 rows=767 loops=1)
+                    Merge Cond: (mc.company_type_id = ct.id)
+                    ->  Sort  (cost=2609129.34..2609129.34 rows=204509 width=29) (actual time=1014.389..1020.892 rows=105501 loops=1)
+                          Sort Key: mc.company_type_id
+                          Sort Method: quicksort  Memory: 11911kB
+                          ->  Nested Loop  (cost=0.00..2609129.34 rows=204509 width=29) (actual time=0.012..987.636 rows=105501 loops=1)
+                                ->  Seq Scan on movie_companies mc  (cost=0.00..2609129.00 rows=295628 width=8) (actual time=0.006..414.694 rows=295628 loops=1)
+                                      Filter: ((note !~~ '%(TV)%'::text) AND (note ~~ '%(USA)%'::text))
+                                      Rows Removed by Filter: 2313501
+                                ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1749032 width=21) (actual time=0.002..0.002 rows=0 loops=295628)
+                                      Index Cond: (id = mc.movie_id)
+                                      Filter: (production_year > 1990)
+                                      Rows Removed by Filter: 1
+                    ->  Sort  (cost=4.00..4.00 rows=1 width=4) (actual time=0.018..0.018 rows=1 loops=1)
+                          Sort Key: ct.id
+                          Sort Method: quicksort  Memory: 25kB
+                          ->  Seq Scan on company_type ct  (cost=0.00..4.00 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+                                Filter: ((kind)::text = 'production companies'::text)
+                                Rows Removed by Filter: 3
+              ->  Bitmap Heap Scan on movie_info mi  (cost=42.00..84.00 rows=2 width=8) (actual time=0.014..0.015 rows=1 loops=767)
+                    Recheck Cond: (movie_id = t.id)
+                    Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German,USA,American}'::text[]))
+                    Rows Removed by Filter: 10
+                    Heap Blocks: exact=6233
+                    ->  Bitmap Index Scan on movie_id_movie_info  (cost=0.00..42.00 rows=42 width=0) (actual time=0.003..0.003 rows=11 loops=767)
+                          Index Cond: (movie_id = t.id)
+        ->  Index Only Scan using info_type_pkey on info_type it  (cost=0.00..2.00 rows=113 width=4) (actual time=0.001..0.001 rows=1 loops=669)
+              Index Cond: (id = mi.info_type_id)
+              Heap Fetches: 669
+Planning time: 0.904 ms
+Execution time: 1042.740 ms

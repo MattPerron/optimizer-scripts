@@ -1,0 +1,45 @@
+Aggregate  (cost=5944.44..5945.44 rows=1 width=96) (actual time=3.012..3.012 rows=1 loops=1)
+  ->  Nested Loop  (cost=1926.00..5944.44 rows=1 width=118) (actual time=2.145..3.001 rows=14 loops=1)
+        ->  Nested Loop  (cost=1926.00..5940.44 rows=1 width=122) (actual time=2.130..2.906 rows=56 loops=1)
+              ->  Nested Loop  (cost=1880.00..5802.44 rows=1 width=130) (actual time=2.124..2.856 rows=14 loops=1)
+                    ->  Nested Loop  (cost=1880.00..5798.44 rows=1 width=134) (actual time=2.120..2.838 rows=14 loops=1)
+                          ->  Nested Loop  (cost=1880.00..5798.44 rows=21 width=119) (actual time=2.114..2.789 rows=21 loops=1)
+                                ->  Nested Loop  (cost=1875.00..5707.44 rows=7 width=107) (actual time=2.102..2.746 rows=7 loops=1)
+                                      ->  Nested Loop  (cost=1875.00..5643.00 rows=1158 width=86) (actual time=0.067..0.499 rows=1158 loops=1)
+                                            ->  Seq Scan on link_type lt  (cost=0.00..18.00 rows=1 width=86) (actual time=0.004..0.007 rows=1 loops=1)
+                                                  Filter: ((link)::text ~~ '%follows%'::text)
+                                                  Rows Removed by Filter: 17
+                                            ->  Bitmap Heap Scan on movie_link ml  (cost=1875.00..3750.00 rows=1875 width=8) (actual time=0.061..0.319 rows=1158 loops=1)
+                                                  Recheck Cond: (link_type_id = lt.id)
+                                                  Heap Blocks: exact=95
+                                                  ->  Bitmap Index Scan on link_type_id_movie_link  (cost=0.00..1875.00 rows=1875 width=0) (actual time=0.049..0.049 rows=1158 loops=1)
+                                                        Index Cond: (link_type_id = lt.id)
+                                      ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=36 width=21) (actual time=0.002..0.002 rows=0 loops=1158)
+                                            Index Cond: (id = ml.movie_id)
+                                            Filter: ((title ~~ '%Money%'::text) AND (production_year = 1998))
+                                            Rows Removed by Filter: 1
+                                ->  Bitmap Heap Scan on movie_companies mc  (cost=5.00..10.00 rows=3 width=12) (actual time=0.004..0.005 rows=3 loops=7)
+                                      Recheck Cond: (movie_id = ml.movie_id)
+                                      Filter: (note IS NULL)
+                                      Rows Removed by Filter: 1
+                                      Heap Blocks: exact=14
+                                      ->  Bitmap Index Scan on movie_id_movie_companies  (cost=0.00..5.00 rows=5 width=0) (actual time=0.002..0.002 rows=4 loops=7)
+                                            Index Cond: (movie_id = ml.movie_id)
+                          ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=48302 width=23) (actual time=0.002..0.002 rows=1 loops=21)
+                                Index Cond: (id = mc.company_id)
+                                Filter: (((country_code)::text <> '[pl]'::text) AND ((name ~~ '%Film%'::text) OR (name ~~ '%Warner%'::text)))
+                                Rows Removed by Filter: 0
+                    ->  Index Scan using company_type_pkey on company_type ct  (cost=0.00..2.00 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=14)
+                          Index Cond: (id = mc.company_type_id)
+                          Filter: ((kind)::text = 'production companies'::text)
+              ->  Bitmap Heap Scan on movie_keyword mk  (cost=46.00..92.00 rows=46 width=8) (actual time=0.002..0.002 rows=4 loops=14)
+                    Recheck Cond: (movie_id = ml.movie_id)
+                    Heap Blocks: exact=14
+                    ->  Bitmap Index Scan on movie_id_movie_keyword  (cost=0.00..46.00 rows=46 width=0) (actual time=0.001..0.001 rows=4 loops=14)
+                          Index Cond: (movie_id = ml.movie_id)
+        ->  Index Scan using keyword_pkey on keyword k  (cost=0.00..2.00 rows=1 width=4) (actual time=0.001..0.001 rows=0 loops=56)
+              Index Cond: (id = mk.keyword_id)
+              Filter: (keyword = 'sequel'::text)
+              Rows Removed by Filter: 1
+Planning time: 3.850 ms
+Execution time: 3.078 ms

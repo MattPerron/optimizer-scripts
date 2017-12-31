@@ -1,0 +1,37 @@
+Aggregate
+  ->  Merge Join
+        Merge Cond: (n.id = ci.person_id)
+        ->  Sort
+              Sort Key: an.person_id
+              ->  Nested Loop
+                    ->  Seq Scan on aka_name an
+                    ->  Index Scan using name_pkey on name n
+                          Index Cond: (id = an.person_id)
+                          Filter: ((gender)::text = 'f'::text)
+        ->  Sort
+              Sort Key: ci.person_id
+              ->  Merge Join
+                    Merge Cond: (ci.movie_id = t.id)
+                    ->  Sort
+                          Sort Key: ci.movie_id
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Seq Scan on role_type rt
+                                            Filter: ((role)::text = 'actress'::text)
+                                      ->  Bitmap Heap Scan on cast_info ci
+                                            Recheck Cond: (role_id = rt.id)
+                                            Filter: (note = ANY ('{(voice),"(voice: Japanese version)","(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                            ->  Bitmap Index Scan on role_id_cast_info
+                                                  Index Cond: (role_id = rt.id)
+                                ->  Index Scan using char_name_pkey on char_name chn
+                                      Index Cond: (id = ci.person_role_id)
+                    ->  Sort
+                          Sort Key: mc.movie_id
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Seq Scan on movie_companies mc
+                                      ->  Index Scan using company_name_pkey on company_name cn
+                                            Index Cond: (id = mc.company_id)
+                                            Filter: ((country_code)::text = '[us]'::text)
+                                ->  Index Scan using title_pkey on title t
+                                      Index Cond: (id = mc.movie_id)

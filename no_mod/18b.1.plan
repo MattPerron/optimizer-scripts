@@ -1,0 +1,33 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Seq Scan on info_type it1
+                                            Filter: ((info)::text = 'genres'::text)
+                                      ->  Bitmap Heap Scan on movie_info mi
+                                            Recheck Cond: (info_type_id = it1.id)
+                                            Filter: ((info = ANY ('{Horror,Thriller}'::text[])) AND (note IS NULL))
+                                            ->  Bitmap Index Scan on info_type_id_movie_info
+                                                  Index Cond: (info_type_id = it1.id)
+                                ->  Index Scan using title_pkey on title t
+                                      Index Cond: (id = mi.movie_id)
+                                      Filter: ((production_year >= 2008) AND (production_year <= 2014))
+                          ->  Bitmap Heap Scan on movie_info_idx mi_idx
+                                Recheck Cond: (movie_id = t.id)
+                                Filter: (info > '8.0'::text)
+                                ->  Bitmap Index Scan on movie_id_movie_info_idx
+                                      Index Cond: (movie_id = t.id)
+                    ->  Index Scan using info_type_pkey on info_type it2
+                          Index Cond: (id = mi_idx.info_type_id)
+                          Filter: ((info)::text = 'rating'::text)
+              ->  Bitmap Heap Scan on cast_info ci
+                    Recheck Cond: (movie_id = t.id)
+                    Filter: (note = ANY ('{(writer),"(head writer)","(written by)",(story),"(story editor)"}'::text[]))
+                    ->  Bitmap Index Scan on movie_id_cast_info
+                          Index Cond: (movie_id = t.id)
+        ->  Index Scan using name_pkey on name n
+              Index Cond: (id = ci.person_id)
+              Filter: ((gender IS NOT NULL) AND ((gender)::text = 'f'::text))

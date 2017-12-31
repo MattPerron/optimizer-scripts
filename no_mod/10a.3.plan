@@ -1,0 +1,29 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (ci.role_id = rt.id)
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Seq Scan on company_name cn
+                                            Filter: ((country_code)::text = '[ru]'::text)
+                                      ->  Bitmap Heap Scan on movie_companies mc
+                                            Recheck Cond: (company_id = cn.id)
+                                            ->  Bitmap Index Scan on company_id_movie_companies
+                                                  Index Cond: (company_id = cn.id)
+                                ->  Index Scan using title_pkey on title t
+                                      Index Cond: (id = mc.movie_id)
+                                      Filter: (production_year > 2005)
+                          ->  Index Only Scan using company_type_pkey on company_type ct
+                                Index Cond: (id = mc.company_type_id)
+                    ->  Bitmap Heap Scan on cast_info ci
+                          Recheck Cond: (movie_id = t.id)
+                          Filter: ((note ~~ '%(voice)%'::text) AND (note ~~ '%(uncredited)%'::text))
+                          ->  Bitmap Index Scan on movie_id_cast_info
+                                Index Cond: (movie_id = t.id)
+              ->  Materialize
+                    ->  Seq Scan on role_type rt
+                          Filter: ((role)::text = 'actor'::text)
+        ->  Index Scan using char_name_pkey on char_name chn
+              Index Cond: (id = ci.person_role_id)

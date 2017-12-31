@@ -1,0 +1,48 @@
+Aggregate  (cost=86025.04..86026.04 rows=1 width=64) (actual time=672.821..672.821 rows=1 loops=1)
+  ->  Nested Loop  (cost=1939.00..86025.04 rows=1 width=32) (actual time=16.850..672.790 rows=32 loops=1)
+        ->  Nested Loop  (cost=1939.00..86021.04 rows=1 width=36) (actual time=16.846..672.709 rows=32 loops=1)
+              ->  Nested Loop  (cost=1937.00..86015.04 rows=1 width=48) (actual time=16.839..672.550 rows=14 loops=1)
+                    ->  Nested Loop  (cost=1911.00..29835.04 rows=1060 width=40) (actual time=0.241..548.213 rows=17559 loops=1)
+                          ->  Nested Loop  (cost=1911.00..29835.01 rows=8133 width=21) (actual time=0.235..178.840 rows=105262 loops=1)
+                                ->  Nested Loop  (cost=1875.00..5643.01 rows=224 width=25) (actual time=0.215..22.673 rows=1467 loops=1)
+                                      ->  Nested Loop  (cost=1875.00..5643.00 rows=1666 width=4) (actual time=0.210..2.196 rows=5186 loops=1)
+                                            ->  Seq Scan on link_type lt  (cost=0.00..18.00 rows=1 width=4) (actual time=0.005..0.008 rows=1 loops=1)
+                                                  Filter: ((link)::text = 'features'::text)
+                                                  Rows Removed by Filter: 17
+                                            ->  Bitmap Heap Scan on movie_link ml  (cost=1875.00..3750.00 rows=1875 width=8) (actual time=0.204..1.164 rows=5186 loops=1)
+                                                  Recheck Cond: (link_type_id = lt.id)
+                                                  Heap Blocks: exact=132
+                                                  ->  Bitmap Index Scan on link_type_id_movie_link  (cost=0.00..1875.00 rows=1875 width=0) (actual time=0.189..0.189 rows=5186 loops=1)
+                                                        Index Cond: (link_type_id = lt.id)
+                                      ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=340186 width=21) (actual time=0.004..0.004 rows=0 loops=5186)
+                                            Index Cond: (id = ml.linked_movie_id)
+                                            Filter: ((production_year >= 1980) AND (production_year <= 1995))
+                                            Rows Removed by Filter: 1
+                                ->  Bitmap Heap Scan on cast_info ci  (cost=36.00..72.00 rows=36 width=8) (actual time=0.015..0.093 rows=72 loops=1467)
+                                      Recheck Cond: (movie_id = t.id)
+                                      Heap Blocks: exact=102016
+                                      ->  Bitmap Index Scan on movie_id_cast_info  (cost=0.00..36.00 rows=36 width=0) (actual time=0.008..0.008 rows=72 loops=1467)
+                                            Index Cond: (movie_id = t.id)
+                          ->  Index Scan using name_pkey on name n  (cost=0.00..2.00 rows=543291 width=19) (actual time=0.003..0.003 rows=0 loops=105262)
+                                Index Cond: (id = ci.person_id)
+                                Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'B%'::text))))
+                                Rows Removed by Filter: 1
+                    ->  Bitmap Heap Scan on person_info pi  (cost=26.00..52.00 rows=1 width=8) (actual time=0.007..0.007 rows=0 loops=17559)
+                          Recheck Cond: (person_id = n.id)
+                          Filter: (note = 'Volker Boehm'::text)
+                          Rows Removed by Filter: 20
+                          Heap Blocks: exact=22985
+                          ->  Bitmap Index Scan on person_id_person_info  (cost=0.00..26.00 rows=26 width=0) (actual time=0.003..0.003 rows=20 loops=17559)
+                                Index Cond: (person_id = n.id)
+              ->  Bitmap Heap Scan on aka_name an  (cost=2.00..4.00 rows=2 width=4) (actual time=0.007..0.009 rows=2 loops=14)
+                    Recheck Cond: (person_id = n.id)
+                    Filter: (name ~~ '%a%'::text)
+                    Rows Removed by Filter: 1
+                    Heap Blocks: exact=26
+                    ->  Bitmap Index Scan on person_id_aka_name  (cost=0.00..2.00 rows=2 width=0) (actual time=0.005..0.005 rows=3 loops=14)
+                          Index Cond: (person_id = n.id)
+        ->  Index Scan using info_type_pkey on info_type it  (cost=0.00..2.00 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=32)
+              Index Cond: (id = pi.info_type_id)
+              Filter: ((info)::text = 'mini biography'::text)
+Planning time: 4.043 ms
+Execution time: 672.898 ms

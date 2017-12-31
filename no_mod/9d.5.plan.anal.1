@@ -1,0 +1,45 @@
+Aggregate  (cost=9478269.13..9478270.13 rows=1 width=128) (actual time=11058.649..11058.649 rows=1 loops=1)
+  ->  Nested Loop  (cost=9274892.13..9478269.13 rows=35704 width=64) (actual time=10049.354..10887.981 rows=483082 loops=1)
+        ->  Merge Join  (cost=9274890.13..9391485.13 rows=14464 width=56) (actual time=10049.274..10337.141 rows=173567 loops=1)
+              Merge Cond: (t.id = ci.movie_id)
+              ->  Sort  (cost=2609213.42..2609213.42 rows=1153798 width=25) (actual time=7868.517..7952.003 rows=1153798 loops=1)
+                    Sort Key: mc.movie_id
+                    Sort Method: quicksort  Memory: 139536kB
+                    ->  Nested Loop  (cost=0.00..2609213.42 rows=1153798 width=25) (actual time=0.018..7462.482 rows=1153798 loops=1)
+                          ->  Nested Loop  (cost=0.00..2609212.50 rows=1153798 width=4) (actual time=0.013..5193.276 rows=1153798 loops=1)
+                                ->  Seq Scan on movie_companies mc  (cost=0.00..2609129.00 rows=2609129 width=8) (actual time=0.006..300.807 rows=2609129 loops=1)
+                                ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=84843 width=4) (actual time=0.002..0.002 rows=0 loops=2609129)
+                                      Index Cond: (id = mc.company_id)
+                                      Filter: ((country_code)::text = '[us]'::text)
+                                      Rows Removed by Filter: 1
+                          ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=2528312 width=21) (actual time=0.002..0.002 rows=1 loops=1153798)
+                                Index Cond: (id = mc.movie_id)
+              ->  Sort  (cost=6665676.71..6665676.71 rows=255493 width=43) (actual time=2180.741..2214.126 rows=352440 loops=1)
+                    Sort Key: ci.movie_id
+                    Sort Method: quicksort  Memory: 27380kB
+                    ->  Nested Loop  (cost=3294940.00..6665676.71 rows=255493 width=43) (actual time=249.081..2090.674 rows=255493 loops=1)
+                          ->  Nested Loop  (cost=3294940.00..6665676.18 rows=255651 width=24) (actual time=249.070..1644.894 rows=255651 loops=1)
+                                ->  Nested Loop  (cost=3294940.00..6665676.00 rows=276166 width=12) (actual time=249.055..1088.213 rows=276166 loops=1)
+                                      ->  Seq Scan on role_type rt  (cost=0.00..12.00 rows=1 width=4) (actual time=0.009..0.012 rows=1 loops=1)
+                                            Filter: ((role)::text = 'actress'::text)
+                                            Rows Removed by Filter: 11
+                                      ->  Bitmap Heap Scan on cast_info ci  (cost=3294940.00..6589880.00 rows=75784 width=16) (actual time=249.041..1043.577 rows=276166 loops=1)
+                                            Recheck Cond: (role_id = rt.id)
+                                            Filter: (note = ANY ('{(voice),"(voice: Japanese version)","(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                            Rows Removed by Filter: 7175807
+                                            Heap Blocks: exact=49087
+                                            ->  Bitmap Index Scan on role_id_cast_info  (cost=0.00..3294940.00 rows=3294940 width=0) (actual time=242.069..242.069 rows=7451973 loops=1)
+                                                  Index Cond: (role_id = rt.id)
+                                ->  Index Scan using char_name_pkey on char_name chn  (cost=0.00..2.00 rows=3140339 width=20) (actual time=0.002..0.002 rows=1 loops=276166)
+                                      Index Cond: (id = ci.person_role_id)
+                          ->  Index Scan using name_pkey on name n  (cost=0.00..2.00 rows=961555 width=19) (actual time=0.001..0.001 rows=1 loops=255651)
+                                Index Cond: (id = ci.person_id)
+                                Filter: ((gender)::text = 'f'::text)
+                                Rows Removed by Filter: 0
+        ->  Bitmap Heap Scan on aka_name an  (cost=2.00..4.00 rows=2 width=20) (actual time=0.002..0.002 rows=3 loops=173567)
+              Recheck Cond: (person_id = n.id)
+              Heap Blocks: exact=166239
+              ->  Bitmap Index Scan on person_id_aka_name  (cost=0.00..2.00 rows=2 width=0) (actual time=0.001..0.001 rows=3 loops=173567)
+                    Index Cond: (person_id = n.id)
+Planning time: 3.894 ms
+Execution time: 11060.130 ms

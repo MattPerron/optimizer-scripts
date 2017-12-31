@@ -1,0 +1,37 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Seq Scan on link_type lt
+                                                  Filter: ((link)::text = 'features'::text)
+                                            ->  Bitmap Heap Scan on movie_link ml
+                                                  Recheck Cond: (link_type_id = lt.id)
+                                                  ->  Bitmap Index Scan on link_type_id_movie_link
+                                                        Index Cond: (link_type_id = lt.id)
+                                      ->  Index Scan using title_pkey on title t
+                                            Index Cond: (id = ml.linked_movie_id)
+                                            Filter: ((production_year >= 1980) AND (production_year <= 1995))
+                                ->  Bitmap Heap Scan on cast_info ci
+                                      Recheck Cond: (movie_id = t.id)
+                                      ->  Bitmap Index Scan on movie_id_cast_info
+                                            Index Cond: (movie_id = t.id)
+                          ->  Index Scan using name_pkey on name n
+                                Index Cond: (id = ci.person_id)
+                                Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'B%'::text))))
+                    ->  Bitmap Heap Scan on person_info pi
+                          Recheck Cond: (person_id = n.id)
+                          Filter: (note = 'Volker Boehm'::text)
+                          ->  Bitmap Index Scan on person_id_person_info
+                                Index Cond: (person_id = n.id)
+              ->  Bitmap Heap Scan on aka_name an
+                    Recheck Cond: (person_id = n.id)
+                    Filter: (name ~~ '%a%'::text)
+                    ->  Bitmap Index Scan on person_id_aka_name
+                          Index Cond: (person_id = n.id)
+        ->  Index Scan using info_type_pkey on info_type it
+              Index Cond: (id = pi.info_type_id)
+              Filter: ((info)::text = 'mini biography'::text)

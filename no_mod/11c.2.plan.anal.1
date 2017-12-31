@@ -1,0 +1,42 @@
+Aggregate  (cost=332140.79..332141.79 rows=1 width=96) (actual time=1792.624..1792.624 rows=1 loops=1)
+  ->  Nested Loop  (cost=30043.03..332140.79 rows=1 width=60) (actual time=71.232..1789.321 rows=6946 loops=1)
+        ->  Nested Loop  (cost=30043.03..332140.47 rows=1 width=64) (actual time=71.223..1780.457 rows=6946 loops=1)
+              ->  Nested Loop  (cost=30043.03..314815.47 rows=25986 width=68) (actual time=68.552..458.653 rows=780776 loops=1)
+                    ->  Merge Join  (cost=29997.03..234223.47 rows=584 width=76) (actual time=68.534..177.005 rows=8393 loops=1)
+                          Merge Cond: (mc.movie_id = ml.movie_id)
+                          ->  Nested Loop  (cost=0.00..5263947.26 rows=10420 width=47) (actual time=5.525..106.725 rows=555 loops=1)
+                                ->  Nested Loop  (cost=0.00..5248318.09 rows=13893 width=51) (actual time=3.177..106.057 rows=596 loops=1)
+                                      ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.00..5218258.00 rows=1337140 width=36) (actual time=0.008..25.308 rows=51115 loops=1)
+                                            Filter: (note IS NOT NULL)
+                                            Rows Removed by Filter: 49650
+                                      ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=89 width=23) (actual time=0.001..0.001 rows=0 loops=51115)
+                                            Index Cond: (id = mc.company_id)
+                                            Filter: (((country_code)::text <> '[pl]'::text) AND ((name ~~ '20th Century Fox%'::text) OR (name ~~ 'Twentieth Century Fox%'::text)))
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using company_type_pkey on company_type ct  (cost=0.00..2.00 rows=3 width=4) (actual time=0.001..0.001 rows=1 loops=596)
+                                      Index Cond: (id = mc.company_type_id)
+                                      Filter: (((kind)::text <> 'production companies'::text) AND (kind IS NOT NULL))
+                                      Rows Removed by Filter: 0
+                          ->  Sort  (cost=29997.03..29997.03 rows=29726 width=29) (actual time=62.702..65.514 rows=36881 loops=1)
+                                Sort Key: ml.movie_id
+                                Sort Method: quicksort  Memory: 3276kB
+                                ->  Nested Loop  (cost=0.00..29997.03 rows=29726 width=29) (actual time=0.014..54.900 rows=29726 loops=1)
+                                      ->  Seq Scan on movie_link ml  (cost=0.00..29997.00 rows=29997 width=8) (actual time=0.007..3.103 rows=29997 loops=1)
+                                      ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=2287271 width=21) (actual time=0.001..0.001 rows=1 loops=29997)
+                                            Index Cond: (id = ml.movie_id)
+                                            Filter: (production_year > 1950)
+                                            Rows Removed by Filter: 0
+                    ->  Bitmap Heap Scan on movie_keyword mk  (cost=46.00..92.00 rows=46 width=8) (actual time=0.007..0.016 rows=93 loops=8393)
+                          Recheck Cond: (movie_id = ml.movie_id)
+                          Heap Blocks: exact=15066
+                          ->  Bitmap Index Scan on movie_id_movie_keyword  (cost=0.00..46.00 rows=46 width=0) (actual time=0.004..0.004 rows=93 loops=8393)
+                                Index Cond: (movie_id = ml.movie_id)
+              ->  Index Scan using keyword_pkey on keyword k  (cost=0.00..2.00 rows=3 width=4) (actual time=0.001..0.001 rows=0 loops=780776)
+                    Index Cond: (id = mk.keyword_id)
+                    Filter: (keyword = ANY ('{sequel,revenge,based-on-novel}'::text[]))
+                    Rows Removed by Filter: 1
+        ->  Index Only Scan using link_type_pkey on link_type lt  (cost=0.00..2.00 rows=18 width=4) (actual time=0.001..0.001 rows=1 loops=6946)
+              Index Cond: (id = ml.link_type_id)
+              Heap Fetches: 6946
+Planning time: 3.642 ms
+Execution time: 1792.705 ms

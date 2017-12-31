@@ -1,0 +1,31 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                Join Filter: (t.kind_id = kt.id)
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Seq Scan on keyword k
+                                                  Filter: (keyword = ANY ('{murder,murder-in-title,blood,violence}'::text[]))
+                                            ->  Index Scan using keyword_id_movie_keyword on movie_keyword mk
+                                                  Index Cond: (keyword_id = k.id)
+                                      ->  Index Scan using title_pkey on title t
+                                            Index Cond: (id = mk.movie_id)
+                                            Filter: (production_year > 2010)
+                                ->  Materialize
+                                      ->  Seq Scan on kind_type kt
+                                            Filter: ((kind)::text = 'movie'::text)
+                          ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx
+                                Index Cond: (movie_id = t.id)
+                                Filter: (info < '8.5'::text)
+                    ->  Index Scan using info_type_pkey on info_type it2
+                          Index Cond: (id = mi_idx.info_type_id)
+                          Filter: ((info)::text = 'rating'::text)
+              ->  Index Scan using movie_id_movie_info on movie_info mi
+                    Index Cond: (movie_id = t.id)
+                    Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German,USA,American}'::text[]))
+        ->  Index Scan using info_type_pkey on info_type it1
+              Index Cond: (id = mi.info_type_id)
+              Filter: ((info)::text = 'countries'::text)

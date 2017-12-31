@@ -1,0 +1,28 @@
+Aggregate  (cost=2246252.38..2246253.38 rows=1 width=96) (actual time=3760.538..3760.538 rows=1 loops=1)
+  ->  Nested Loop  (cost=343.00..2246252.38 rows=1 width=48) (actual time=73.987..3760.334 rows=88 loops=1)
+        ->  Nested Loop  (cost=343.00..2239222.05 rows=7029 width=37) (actual time=0.475..1276.788 rows=785477 loops=1)
+              ->  Nested Loop  (cost=307.00..141538.05 rows=19423 width=41) (actual time=0.467..174.257 rows=14165 loops=1)
+                    ->  Nested Loop  (cost=307.00..141538.00 rows=35548 width=20) (actual time=0.460..67.890 rows=35548 loops=1)
+                          ->  Seq Scan on keyword k  (cost=0.00..134170.00 rows=8 width=20) (actual time=0.083..21.285 rows=8 loops=1)
+                                Filter: (keyword = ANY ('{superhero,sequel,second-part,marvel-comics,based-on-comic,tv-special,fight,violence}'::text[]))
+                                Rows Removed by Filter: 134162
+                          ->  Bitmap Heap Scan on movie_keyword mk  (cost=307.00..614.00 rows=307 width=8) (actual time=0.754..4.949 rows=4444 loops=8)
+                                Recheck Cond: (keyword_id = k.id)
+                                Heap Blocks: exact=23488
+                                ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..307.00 rows=307 width=0) (actual time=0.397..0.397 rows=4444 loops=8)
+                                      Index Cond: (keyword_id = k.id)
+                    ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1381453 width=21) (actual time=0.003..0.003 rows=0 loops=35548)
+                          Index Cond: (id = mk.movie_id)
+                          Filter: (production_year > 2000)
+                          Rows Removed by Filter: 1
+              ->  Bitmap Heap Scan on cast_info ci  (cost=36.00..72.00 rows=36 width=8) (actual time=0.011..0.068 rows=55 loops=14165)
+                    Recheck Cond: (movie_id = t.id)
+                    Heap Blocks: exact=750456
+                    ->  Bitmap Index Scan on movie_id_cast_info  (cost=0.00..36.00 rows=36 width=0) (actual time=0.006..0.006 rows=55 loops=14165)
+                          Index Cond: (movie_id = t.id)
+        ->  Index Scan using name_pkey on name n  (cost=0.00..2.00 rows=2 width=19) (actual time=0.003..0.003 rows=0 loops=785477)
+              Index Cond: (id = ci.person_id)
+              Filter: (name ~~ '%Downey%Robert%'::text)
+              Rows Removed by Filter: 1
+Planning time: 0.881 ms
+Execution time: 3760.587 ms

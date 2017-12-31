@@ -1,0 +1,32 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Merge Join
+                          Merge Cond: (mc.movie_id = ml.movie_id)
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                            Filter: (note IS NOT NULL)
+                                      ->  Index Scan using company_name_pkey on company_name cn
+                                            Index Cond: (id = mc.company_id)
+                                            Filter: (((country_code)::text <> '[pl]'::text) AND ((name ~~ '20th Century Fox%'::text) OR (name ~~ 'Twentieth Century Fox%'::text)))
+                                ->  Index Scan using company_type_pkey on company_type ct
+                                      Index Cond: (id = mc.company_type_id)
+                                      Filter: (((kind)::text <> 'production companies'::text) AND (kind IS NOT NULL))
+                          ->  Sort
+                                Sort Key: ml.movie_id
+                                ->  Nested Loop
+                                      ->  Seq Scan on movie_link ml
+                                      ->  Index Scan using title_pkey on title t
+                                            Index Cond: (id = ml.movie_id)
+                                            Filter: (production_year > 1950)
+                    ->  Bitmap Heap Scan on movie_keyword mk
+                          Recheck Cond: (movie_id = ml.movie_id)
+                          ->  Bitmap Index Scan on movie_id_movie_keyword
+                                Index Cond: (movie_id = ml.movie_id)
+              ->  Index Scan using keyword_pkey on keyword k
+                    Index Cond: (id = mk.keyword_id)
+                    Filter: (keyword = ANY ('{sequel,revenge,based-on-novel}'::text[]))
+        ->  Index Only Scan using link_type_pkey on link_type lt
+              Index Cond: (id = ml.link_type_id)

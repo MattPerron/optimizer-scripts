@@ -1,0 +1,32 @@
+Aggregate
+  ->  Merge Join
+        Merge Cond: (n1.id = a1.person_id)
+        ->  Sort
+              Sort Key: ci.person_id
+              ->  Nested Loop
+                    ->  Merge Join
+                          Merge Cond: (ci.movie_id = t.id)
+                          ->  Sort
+                                Sort Key: ci.movie_id
+                                ->  Nested Loop
+                                      ->  Seq Scan on role_type rt
+                                            Filter: ((role)::text = 'writer'::text)
+                                      ->  Bitmap Heap Scan on cast_info ci
+                                            Recheck Cond: (role_id = rt.id)
+                                            ->  Bitmap Index Scan on role_id_cast_info
+                                                  Index Cond: (role_id = rt.id)
+                          ->  Sort
+                                Sort Key: mc.movie_id
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Seq Scan on movie_companies mc
+                                            ->  Index Scan using company_name_pkey on company_name cn
+                                                  Index Cond: (id = mc.company_id)
+                                                  Filter: ((country_code)::text = '[us]'::text)
+                                      ->  Index Scan using title_pkey on title t
+                                            Index Cond: (id = mc.movie_id)
+                    ->  Index Only Scan using name_pkey on name n1
+                          Index Cond: (id = ci.person_id)
+        ->  Sort
+              Sort Key: a1.person_id
+              ->  Seq Scan on aka_name a1

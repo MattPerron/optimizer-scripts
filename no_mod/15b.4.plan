@@ -1,0 +1,39 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Nested Loop
+                                                  ->  Seq Scan on company_name cn
+                                                        Filter: (((country_code)::text = '[us]'::text) AND (name = 'YouTube'::text))
+                                                  ->  Bitmap Heap Scan on movie_companies mc
+                                                        Recheck Cond: (company_id = cn.id)
+                                                        Filter: ((note ~~ '%(200%)%'::text) AND (note ~~ '%(worldwide)%'::text))
+                                                        ->  Bitmap Index Scan on company_id_movie_companies
+                                                              Index Cond: (company_id = cn.id)
+                                            ->  Index Scan using title_pkey on title t
+                                                  Index Cond: (id = mc.movie_id)
+                                                  Filter: ((production_year >= 2005) AND (production_year <= 2010))
+                                      ->  Bitmap Heap Scan on aka_title at
+                                            Recheck Cond: (movie_id = t.id)
+                                            ->  Bitmap Index Scan on movie_id_aka_title
+                                                  Index Cond: (movie_id = t.id)
+                                ->  Index Only Scan using company_type_pkey on company_type ct
+                                      Index Cond: (id = mc.company_type_id)
+                          ->  Bitmap Heap Scan on movie_info mi
+                                Recheck Cond: (movie_id = t.id)
+                                Filter: ((note ~~ '%internet%'::text) AND (info ~~ 'USA:% 200%'::text))
+                                ->  Bitmap Index Scan on movie_id_movie_info
+                                      Index Cond: (movie_id = t.id)
+                    ->  Index Scan using info_type_pkey on info_type it1
+                          Index Cond: (id = mi.info_type_id)
+                          Filter: ((info)::text = 'release dates'::text)
+              ->  Bitmap Heap Scan on movie_keyword mk
+                    Recheck Cond: (movie_id = t.id)
+                    ->  Bitmap Index Scan on movie_id_movie_keyword
+                          Index Cond: (movie_id = t.id)
+        ->  Index Only Scan using keyword_pkey on keyword k
+              Index Cond: (id = mk.keyword_id)

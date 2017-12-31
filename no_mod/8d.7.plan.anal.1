@@ -1,0 +1,42 @@
+Aggregate  (cost=13555093.55..13555094.55 rows=1 width=64) (actual time=9618.320..9618.320 rows=1 loops=1)
+  ->  Merge Join  (cost=13455168.55..13555093.55 rows=323005 width=33) (actual time=9275.761..9551.733 rows=323005 loops=1)
+        Merge Cond: (t.id = ci.movie_id)
+        ->  Sort  (cost=2609213.42..2609213.42 rows=1153798 width=25) (actual time=7981.464..8054.621 rows=1153798 loops=1)
+              Sort Key: mc.movie_id
+              Sort Method: quicksort  Memory: 139536kB
+              ->  Nested Loop  (cost=0.00..2609213.42 rows=1153798 width=25) (actual time=0.017..7584.267 rows=1153798 loops=1)
+                    ->  Nested Loop  (cost=0.00..2609212.50 rows=1153798 width=4) (actual time=0.012..5275.504 rows=1153798 loops=1)
+                          ->  Seq Scan on movie_companies mc  (cost=0.00..2609129.00 rows=2609129 width=8) (actual time=0.005..304.115 rows=2609129 loops=1)
+                          ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=84843 width=4) (actual time=0.002..0.002 rows=0 loops=2609129)
+                                Index Cond: (id = mc.company_id)
+                                Filter: ((country_code)::text = '[us]'::text)
+                                Rows Removed by Filter: 1
+                    ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=2528312 width=21) (actual time=0.002..0.002 rows=1 loops=1153798)
+                          Index Cond: (id = mc.movie_id)
+        ->  Sort  (cost=10845955.13..10845955.13 rows=218966 width=20) (actual time=1294.285..1327.149 rows=435423 loops=1)
+              Sort Key: ci.movie_id
+              Sort Method: quicksort  Memory: 22226kB
+              ->  Merge Join  (cost=10786175.13..10845955.13 rows=218966 width=20) (actual time=1023.474..1239.555 rows=218966 loops=1)
+                    Merge Cond: (n1.id = an1.person_id)
+                    ->  Sort  (cost=9884832.13..9884832.13 rows=276403 width=12) (actual time=604.530..623.373 rows=276403 loops=1)
+                          Sort Key: ci.person_id
+                          Sort Method: quicksort  Memory: 25245kB
+                          ->  Nested Loop  (cost=3294940.00..9884832.13 rows=276403 width=12) (actual time=9.298..545.572 rows=276403 loops=1)
+                                ->  Nested Loop  (cost=3294940.00..9884832.00 rows=276403 width=8) (actual time=9.285..88.218 rows=276403 loops=1)
+                                      ->  Seq Scan on role_type rt  (cost=0.00..12.00 rows=1 width=4) (actual time=0.010..0.014 rows=1 loops=1)
+                                            Filter: ((role)::text = 'costume designer'::text)
+                                            Rows Removed by Filter: 11
+                                      ->  Bitmap Heap Scan on cast_info ci  (cost=3294940.00..6589880.00 rows=3294940 width=12) (actual time=9.269..42.435 rows=276403 loops=1)
+                                            Recheck Cond: (role_id = rt.id)
+                                            Heap Blocks: exact=1576
+                                            ->  Bitmap Index Scan on role_id_cast_info  (cost=0.00..3294940.00 rows=3294940 width=0) (actual time=9.110..9.110 rows=276403 loops=1)
+                                                  Index Cond: (role_id = rt.id)
+                                ->  Index Only Scan using name_pkey on name n1  (cost=0.00..2.00 rows=4167491 width=4) (actual time=0.001..0.001 rows=1 loops=276403)
+                                      Index Cond: (id = ci.person_id)
+                                      Heap Fetches: 276403
+                    ->  Sort  (cost=901343.00..901343.00 rows=901343 width=20) (actual time=418.930..492.973 rows=895704 loops=1)
+                          Sort Key: an1.person_id
+                          Sort Method: quicksort  Memory: 89764kB
+                          ->  Seq Scan on aka_name an1  (cost=0.00..901343.00 rows=901343 width=20) (actual time=0.009..133.709 rows=901343 loops=1)
+Planning time: 2.170 ms
+Execution time: 9620.047 ms

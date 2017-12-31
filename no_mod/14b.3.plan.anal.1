@@ -1,0 +1,48 @@
+Aggregate  (cost=135306.85..135307.85 rows=1 width=64) (actual time=76.841..76.841 rows=1 loops=1)
+  ->  Nested Loop  (cost=352.00..135306.85 rows=1 width=23) (actual time=42.449..76.836 rows=1 loops=1)
+        ->  Nested Loop  (cost=352.00..135302.85 rows=1 width=27) (actual time=42.447..76.834 rows=1 loops=1)
+              ->  Nested Loop  (cost=352.00..135298.85 rows=1 width=31) (actual time=42.443..76.829 rows=1 loops=1)
+                    ->  Nested Loop  (cost=310.00..135212.85 rows=1 width=39) (actual time=42.409..76.792 rows=1 loops=1)
+                          ->  Nested Loop  (cost=307.00..135198.85 rows=2 width=25) (actual time=13.164..76.729 rows=10 loops=1)
+                                Join Filter: (t.kind_id = kt.id)
+                                Rows Removed by Join Filter: 5
+                                ->  Nested Loop  (cost=307.00..135176.85 rows=15 width=29) (actual time=4.695..76.706 rows=15 loops=1)
+                                      ->  Nested Loop  (cost=307.00..135091.00 rows=19528 width=4) (actual time=4.139..32.319 rows=19528 loops=1)
+                                            ->  Seq Scan on keyword k  (cost=0.00..134170.00 rows=1 width=4) (actual time=0.764..11.726 rows=1 loops=1)
+                                                  Filter: (keyword = ANY ('{murder,murder-in-title}'::text[]))
+                                                  Rows Removed by Filter: 134169
+                                            ->  Bitmap Heap Scan on movie_keyword mk  (cost=307.00..614.00 rows=307 width=8) (actual time=3.373..17.650 rows=19528 loops=1)
+                                                  Recheck Cond: (keyword_id = k.id)
+                                                  Heap Blocks: exact=12389
+                                                  ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..307.00 rows=307 width=0) (actual time=1.737..1.737 rows=19528 loops=1)
+                                                        Index Cond: (keyword_id = k.id)
+                                      ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=455 width=25) (actual time=0.002..0.002 rows=0 loops=19528)
+                                            Index Cond: (id = mk.movie_id)
+                                            Filter: ((production_year > 2010) AND ((title ~~ '%murder%'::text) OR (title ~~ '%Murder%'::text) OR (title ~~ '%Mord%'::text)))
+                                            Rows Removed by Filter: 1
+                                ->  Materialize  (cost=0.00..7.00 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=15)
+                                      ->  Seq Scan on kind_type kt  (cost=0.00..7.00 rows=1 width=4) (actual time=0.005..0.006 rows=1 loops=1)
+                                            Filter: ((kind)::text = 'movie'::text)
+                                            Rows Removed by Filter: 6
+                          ->  Bitmap Heap Scan on movie_info_idx mi_idx  (cost=3.00..6.00 rows=1 width=14) (actual time=0.005..0.005 rows=0 loops=10)
+                                Recheck Cond: (movie_id = t.id)
+                                Filter: (info > '6.0'::text)
+                                Rows Removed by Filter: 1
+                                Heap Blocks: exact=3
+                                ->  Bitmap Index Scan on movie_id_movie_info_idx  (cost=0.00..3.00 rows=3 width=0) (actual time=0.003..0.003 rows=1 loops=10)
+                                      Index Cond: (movie_id = t.id)
+                    ->  Bitmap Heap Scan on movie_info mi  (cost=42.00..84.00 rows=2 width=8) (actual time=0.033..0.035 rows=1 loops=1)
+                          Recheck Cond: (movie_id = t.id)
+                          Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German,USA,American}'::text[]))
+                          Rows Removed by Filter: 10
+                          Heap Blocks: exact=8
+                          ->  Bitmap Index Scan on movie_id_movie_info  (cost=0.00..42.00 rows=42 width=0) (actual time=0.007..0.007 rows=11 loops=1)
+                                Index Cond: (movie_id = t.id)
+              ->  Index Scan using info_type_pkey on info_type it1  (cost=0.00..2.00 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=1)
+                    Index Cond: (id = mi.info_type_id)
+                    Filter: ((info)::text = 'countries'::text)
+        ->  Index Scan using info_type_pkey on info_type it2  (cost=0.00..2.00 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=1)
+              Index Cond: (id = mi_idx.info_type_id)
+              Filter: ((info)::text = 'rating'::text)
+Planning time: 3.452 ms
+Execution time: 76.908 ms

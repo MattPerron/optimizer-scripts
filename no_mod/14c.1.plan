@@ -1,0 +1,36 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Seq Scan on keyword k
+                                                  Filter: ((keyword IS NOT NULL) AND (keyword = ANY ('{murder,murder-in-title,blood,violence}'::text[])))
+                                            ->  Bitmap Heap Scan on movie_keyword mk
+                                                  Recheck Cond: (keyword_id = k.id)
+                                                  ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                        Index Cond: (keyword_id = k.id)
+                                      ->  Index Scan using title_pkey on title t
+                                            Index Cond: (id = mk.movie_id)
+                                            Filter: (production_year > 2005)
+                                ->  Index Scan using kind_type_pkey on kind_type kt
+                                      Index Cond: (id = t.kind_id)
+                                      Filter: ((kind)::text = ANY ('{movie,episode}'::text[]))
+                          ->  Bitmap Heap Scan on movie_info_idx mi_idx
+                                Recheck Cond: (movie_id = t.id)
+                                Filter: (info < '8.5'::text)
+                                ->  Bitmap Index Scan on movie_id_movie_info_idx
+                                      Index Cond: (movie_id = t.id)
+                    ->  Index Scan using info_type_pkey on info_type it2
+                          Index Cond: (id = mi_idx.info_type_id)
+                          Filter: ((info)::text = 'rating'::text)
+              ->  Bitmap Heap Scan on movie_info mi
+                    Recheck Cond: (movie_id = t.id)
+                    Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Danish,Norwegian,German,USA,American}'::text[]))
+                    ->  Bitmap Index Scan on movie_id_movie_info
+                          Index Cond: (movie_id = t.id)
+        ->  Index Scan using info_type_pkey on info_type it1
+              Index Cond: (id = mi.info_type_id)
+              Filter: ((info)::text = 'countries'::text)

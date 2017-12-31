@@ -1,0 +1,47 @@
+Aggregate  (cost=677548.18..677549.18 rows=1 width=96) (actual time=518.892..518.893 rows=1 loops=1)
+  ->  Nested Loop  (cost=215163.00..677548.18 rows=3 width=65) (actual time=96.109..518.872 rows=11 loops=1)
+        ->  Nested Loop  (cost=215163.00..677548.18 rows=12 width=69) (actual time=58.415..517.574 rows=268 loops=1)
+              ->  Hash Join  (cost=215127.00..676745.18 rows=11 width=77) (actual time=51.067..500.852 rows=358 loops=1)
+                    Hash Cond: (mi_idx.info_type_id = it2.id)
+                    ->  Nested Loop  (cost=215013.00..675388.18 rows=1254 width=81) (actual time=49.772..500.546 rows=1347 loops=1)
+                          ->  Nested Loop  (cost=215010.00..431081.18 rows=34901 width=67) (actual time=49.688..419.005 rows=34901 loops=1)
+                                ->  Nested Loop  (cost=215010.00..431081.00 rows=72258 width=46) (actual time=49.619..261.698 rows=72258 loops=1)
+                                      ->  Seq Scan on info_type it1  (cost=0.00..113.00 rows=1 width=4) (actual time=0.002..0.010 rows=1 loops=1)
+                                            Filter: ((info)::text = 'genres'::text)
+                                            Rows Removed by Filter: 112
+                                      ->  Bitmap Heap Scan on movie_info mi  (cost=215010.00..430020.00 rows=948 width=50) (actual time=49.615..250.841 rows=72258 loops=1)
+                                            Recheck Cond: (info_type_id = it1.id)
+                                            Filter: ((info = ANY ('{Horror,Thriller}'::text[])) AND (note IS NULL))
+                                            Rows Removed by Filter: 1461651
+                                            Heap Blocks: exact=9770
+                                            ->  Bitmap Index Scan on info_type_id_movie_info  (cost=0.00..215010.00 rows=215010 width=0) (actual time=48.288..48.288 rows=1533909 loops=1)
+                                                  Index Cond: (info_type_id = it1.id)
+                                ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=784488 width=21) (actual time=0.002..0.002 rows=0 loops=72258)
+                                      Index Cond: (id = mi.movie_id)
+                                      Filter: ((production_year >= 2008) AND (production_year <= 2014))
+                                      Rows Removed by Filter: 1
+                          ->  Bitmap Heap Scan on movie_info_idx mi_idx  (cost=3.00..6.00 rows=1 width=14) (actual time=0.002..0.002 rows=0 loops=34901)
+                                Recheck Cond: (movie_id = t.id)
+                                Filter: (info > '8.0'::text)
+                                Rows Removed by Filter: 1
+                                Heap Blocks: exact=11745
+                                ->  Bitmap Index Scan on movie_id_movie_info_idx  (cost=0.00..3.00 rows=3 width=0) (actual time=0.001..0.001 rows=1 loops=34901)
+                                      Index Cond: (movie_id = t.id)
+                    ->  Hash  (cost=113.00..113.00 rows=1 width=4) (actual time=0.013..0.013 rows=1 loops=1)
+                          Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                          ->  Seq Scan on info_type it2  (cost=0.00..113.00 rows=1 width=4) (actual time=0.010..0.011 rows=1 loops=1)
+                                Filter: ((info)::text = 'rating'::text)
+                                Rows Removed by Filter: 112
+              ->  Bitmap Heap Scan on cast_info ci  (cost=36.00..72.00 rows=1 width=8) (actual time=0.037..0.046 rows=1 loops=358)
+                    Recheck Cond: (movie_id = t.id)
+                    Filter: (note = ANY ('{(writer),"(head writer)","(written by)",(story),"(story editor)"}'::text[]))
+                    Rows Removed by Filter: 34
+                    Heap Blocks: exact=11440
+                    ->  Bitmap Index Scan on movie_id_cast_info  (cost=0.00..36.00 rows=36 width=0) (actual time=0.006..0.006 rows=35 loops=358)
+                          Index Cond: (movie_id = t.id)
+        ->  Index Scan using name_pkey on name n  (cost=0.00..2.00 rows=961555 width=4) (actual time=0.005..0.005 rows=0 loops=268)
+              Index Cond: (id = ci.person_id)
+              Filter: ((gender IS NOT NULL) AND ((gender)::text = 'f'::text))
+              Rows Removed by Filter: 1
+Planning time: 2.379 ms
+Execution time: 518.965 ms

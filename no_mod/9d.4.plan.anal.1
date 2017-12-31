@@ -1,0 +1,45 @@
+Aggregate  (cost=8182446.61..8182447.61 rows=1 width=128) (actual time=7989.327..7989.327 rows=1 loops=1)
+  ->  Nested Loop  (cost=7567026.05..8182446.61 rows=23639 width=64) (actual time=3608.960..7787.296 rows=483082 loops=1)
+        ->  Nested Loop  (cost=7567026.05..8182446.59 rows=23639 width=55) (actual time=3608.948..6905.694 rows=483082 loops=1)
+              ->  Nested Loop  (cost=7567026.05..8182445.05 rows=65476 width=59) (actual time=3608.907..5291.390 rows=909946 loops=1)
+                    ->  Merge Join  (cost=7567021.05..7578890.05 rows=40237 width=51) (actual time=3608.869..3812.703 rows=482841 loops=1)
+                          Merge Cond: (n.id = ci.person_id)
+                          ->  Sort  (cost=901344.87..901344.87 rows=193486 width=39) (actual time=1939.304..1954.879 rows=193449 loops=1)
+                                Sort Key: an.person_id
+                                Sort Method: quicksort  Memory: 23312kB
+                                ->  Nested Loop  (cost=0.00..901344.87 rows=193486 width=39) (actual time=0.109..1874.775 rows=193486 loops=1)
+                                      ->  Seq Scan on aka_name an  (cost=0.00..901343.00 rows=901343 width=20) (actual time=0.006..107.758 rows=901343 loops=1)
+                                      ->  Index Scan using name_pkey on name n  (cost=0.00..2.00 rows=961555 width=19) (actual time=0.002..0.002 rows=0 loops=901343)
+                                            Index Cond: (id = an.person_id)
+                                            Filter: ((gender)::text = 'f'::text)
+                                            Rows Removed by Filter: 1
+                          ->  Sort  (cost=6665676.18..6665676.18 rows=255651 width=24) (actual time=1669.508..1717.722 rows=588889 loops=1)
+                                Sort Key: ci.person_id
+                                Sort Method: quicksort  Memory: 23234kB
+                                ->  Nested Loop  (cost=3294940.00..6665676.18 rows=255651 width=24) (actual time=242.486..1600.438 rows=255651 loops=1)
+                                      ->  Nested Loop  (cost=3294940.00..6665676.00 rows=276166 width=12) (actual time=242.470..1079.690 rows=276166 loops=1)
+                                            ->  Seq Scan on role_type rt  (cost=0.00..12.00 rows=1 width=4) (actual time=0.008..0.011 rows=1 loops=1)
+                                                  Filter: ((role)::text = 'actress'::text)
+                                                  Rows Removed by Filter: 11
+                                            ->  Bitmap Heap Scan on cast_info ci  (cost=3294940.00..6589880.00 rows=75784 width=16) (actual time=242.458..1038.683 rows=276166 loops=1)
+                                                  Recheck Cond: (role_id = rt.id)
+                                                  Filter: (note = ANY ('{(voice),"(voice: Japanese version)","(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                                  Rows Removed by Filter: 7175807
+                                                  Heap Blocks: exact=49087
+                                                  ->  Bitmap Index Scan on role_id_cast_info  (cost=0.00..3294940.00 rows=3294940 width=0) (actual time=235.183..235.183 rows=7451973 loops=1)
+                                                        Index Cond: (role_id = rt.id)
+                                      ->  Index Scan using char_name_pkey on char_name chn  (cost=0.00..2.00 rows=3140339 width=20) (actual time=0.002..0.002 rows=1 loops=276166)
+                                            Index Cond: (id = ci.person_role_id)
+                    ->  Bitmap Heap Scan on movie_companies mc  (cost=5.00..10.00 rows=5 width=8) (actual time=0.002..0.002 rows=2 loops=482841)
+                          Recheck Cond: (movie_id = ci.movie_id)
+                          Heap Blocks: exact=408522
+                          ->  Bitmap Index Scan on movie_id_movie_companies  (cost=0.00..5.00 rows=5 width=0) (actual time=0.001..0.001 rows=2 loops=482841)
+                                Index Cond: (movie_id = ci.movie_id)
+              ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=84843 width=4) (actual time=0.001..0.001 rows=1 loops=909946)
+                    Index Cond: (id = mc.company_id)
+                    Filter: ((country_code)::text = '[us]'::text)
+                    Rows Removed by Filter: 0
+        ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=2528312 width=21) (actual time=0.001..0.001 rows=1 loops=483082)
+              Index Cond: (id = ci.movie_id)
+Planning time: 3.887 ms
+Execution time: 7990.316 ms

@@ -1,0 +1,34 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          Join Filter: (ci.role_id = rt.id)
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Seq Scan on aka_name an
+                                            ->  Index Scan using name_pkey on name n
+                                                  Index Cond: (id = an.person_id)
+                                                  Filter: ((name ~~ '%Ang%'::text) AND ((gender)::text = 'f'::text))
+                                      ->  Bitmap Heap Scan on cast_info ci
+                                            Recheck Cond: (person_id = n.id)
+                                            Filter: (note = ANY ('{(voice),"(voice: Japanese version)","(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                            ->  Bitmap Index Scan on person_id_cast_info
+                                                  Index Cond: (person_id = n.id)
+                                ->  Index Scan using title_pkey on title t
+                                      Index Cond: (id = ci.movie_id)
+                                      Filter: ((production_year >= 2005) AND (production_year <= 2015))
+                          ->  Materialize
+                                ->  Seq Scan on role_type rt
+                                      Filter: ((role)::text = 'actress'::text)
+                    ->  Bitmap Heap Scan on movie_companies mc
+                          Recheck Cond: (movie_id = ci.movie_id)
+                          Filter: ((note IS NOT NULL) AND ((note ~~ '%(USA)%'::text) OR (note ~~ '%(worldwide)%'::text)))
+                          ->  Bitmap Index Scan on movie_id_movie_companies
+                                Index Cond: (movie_id = ci.movie_id)
+              ->  Index Scan using company_name_pkey on company_name cn
+                    Index Cond: (id = mc.company_id)
+                    Filter: ((country_code)::text = '[us]'::text)
+        ->  Index Scan using char_name_pkey on char_name chn
+              Index Cond: (id = ci.person_role_id)

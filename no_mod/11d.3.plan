@@ -1,0 +1,37 @@
+Aggregate
+  ->  Nested Loop
+        ->  Hash Join
+              Hash Cond: (mc.company_type_id = ct.id)
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Merge Join
+                                Merge Cond: (t.id = ml.movie_id)
+                                ->  Sort
+                                      Sort Key: mk.movie_id
+                                      ->  Nested Loop
+                                            ->  Nested Loop
+                                                  ->  Seq Scan on keyword k
+                                                        Filter: (keyword = ANY ('{sequel,revenge,based-on-novel}'::text[]))
+                                                  ->  Bitmap Heap Scan on movie_keyword mk
+                                                        Recheck Cond: (keyword_id = k.id)
+                                                        ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                              Index Cond: (keyword_id = k.id)
+                                            ->  Index Scan using title_pkey on title t
+                                                  Index Cond: (id = mk.movie_id)
+                                                  Filter: (production_year > 1950)
+                                ->  Sort
+                                      Sort Key: ml.movie_id
+                                      ->  Seq Scan on movie_link ml
+                          ->  Bitmap Heap Scan on movie_companies mc
+                                Recheck Cond: (movie_id = ml.movie_id)
+                                Filter: (note IS NOT NULL)
+                                ->  Bitmap Index Scan on movie_id_movie_companies
+                                      Index Cond: (movie_id = ml.movie_id)
+                    ->  Index Scan using company_name_pkey on company_name cn
+                          Index Cond: (id = mc.company_id)
+                          Filter: ((country_code)::text <> '[pl]'::text)
+              ->  Hash
+                    ->  Seq Scan on company_type ct
+                          Filter: (((kind)::text <> 'production companies'::text) AND (kind IS NOT NULL))
+        ->  Index Only Scan using link_type_pkey on link_type lt
+              Index Cond: (id = ml.link_type_id)

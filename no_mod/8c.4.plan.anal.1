@@ -1,0 +1,42 @@
+Aggregate  (cost=15055167.73..15055168.73 rows=1 width=64) (actual time=17564.742..17564.742 rows=1 loops=1)
+  ->  Merge Join  (cost=13985606.73..15055167.73 rows=3442300 width=33) (actual time=15978.040..17070.311 rows=2487611 loops=1)
+        Merge Cond: (t.id = ci.movie_id)
+        ->  Sort  (cost=2609213.42..2609213.42 rows=1153798 width=25) (actual time=7870.711..7953.946 rows=1153798 loops=1)
+              Sort Key: mc.movie_id
+              Sort Method: quicksort  Memory: 139536kB
+              ->  Nested Loop  (cost=0.00..2609213.42 rows=1153798 width=25) (actual time=0.016..7476.144 rows=1153798 loops=1)
+                    ->  Nested Loop  (cost=0.00..2609212.50 rows=1153798 width=4) (actual time=0.012..5193.049 rows=1153798 loops=1)
+                          ->  Seq Scan on movie_companies mc  (cost=0.00..2609129.00 rows=2609129 width=8) (actual time=0.005..300.303 rows=2609129 loops=1)
+                          ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=84843 width=4) (actual time=0.002..0.002 rows=0 loops=2609129)
+                                Index Cond: (id = mc.company_id)
+                                Filter: ((country_code)::text = '[us]'::text)
+                                Rows Removed by Filter: 1
+                    ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=2528312 width=21) (actual time=0.002..0.002 rows=1 loops=1153798)
+                          Index Cond: (id = mc.movie_id)
+        ->  Sort  (cost=11376393.31..11376393.31 rows=2343724 width=20) (actual time=8107.313..8430.188 rows=3851236 loops=1)
+              Sort Key: ci.movie_id
+              Sort Method: quicksort  Memory: 269551kB
+              ->  Merge Join  (cost=10786178.31..11376393.31 rows=2343724 width=20) (actual time=6388.203..7455.351 rows=2343724 loops=1)
+                    Merge Cond: (n1.id = a1.person_id)
+                    ->  Sort  (cost=9884835.31..9884835.31 rows=2728943 width=12) (actual time=5974.332..6164.215 rows=2728943 loops=1)
+                          Sort Key: ci.person_id
+                          Sort Method: quicksort  Memory: 226224kB
+                          ->  Nested Loop  (cost=3294940.00..9884835.31 rows=2728943 width=12) (actual time=94.275..5335.398 rows=2728943 loops=1)
+                                ->  Nested Loop  (cost=3294940.00..9884832.00 rows=2728943 width=8) (actual time=94.260..882.710 rows=2728943 loops=1)
+                                      ->  Seq Scan on role_type rt  (cost=0.00..12.00 rows=1 width=4) (actual time=0.010..0.014 rows=1 loops=1)
+                                            Filter: ((role)::text = 'writer'::text)
+                                            Rows Removed by Filter: 11
+                                      ->  Bitmap Heap Scan on cast_info ci  (cost=3294940.00..6589880.00 rows=3294940 width=12) (actual time=94.235..434.320 rows=2728943 loops=1)
+                                            Recheck Cond: (role_id = rt.id)
+                                            Heap Blocks: exact=19775
+                                            ->  Bitmap Index Scan on role_id_cast_info  (cost=0.00..3294940.00 rows=3294940 width=0) (actual time=91.519..91.519 rows=2728943 loops=1)
+                                                  Index Cond: (role_id = rt.id)
+                                ->  Index Only Scan using name_pkey on name n1  (cost=0.00..2.00 rows=4167491 width=4) (actual time=0.001..0.001 rows=1 loops=2728943)
+                                      Index Cond: (id = ci.person_id)
+                                      Heap Fetches: 2728943
+                    ->  Sort  (cost=901343.00..901343.00 rows=901343 width=20) (actual time=413.861..610.325 rows=2866608 loops=1)
+                          Sort Key: a1.person_id
+                          Sort Method: quicksort  Memory: 89764kB
+                          ->  Seq Scan on aka_name a1  (cost=0.00..901343.00 rows=901343 width=20) (actual time=0.012..133.344 rows=901343 loops=1)
+Planning time: 2.125 ms
+Execution time: 17570.960 ms

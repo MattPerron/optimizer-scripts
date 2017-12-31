@@ -1,0 +1,26 @@
+Aggregate
+  ->  Merge Join
+        Merge Cond: (mi_idx.info_type_id = it.id)
+        ->  Sort
+              Sort Key: mi_idx.info_type_id
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Seq Scan on keyword k
+                                      Filter: (keyword ~~ '%sequel%'::text)
+                                ->  Bitmap Heap Scan on movie_keyword mk
+                                      Recheck Cond: (keyword_id = k.id)
+                                      ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                            Index Cond: (keyword_id = k.id)
+                          ->  Index Scan using title_pkey on title t
+                                Index Cond: (id = mk.movie_id)
+                                Filter: (production_year > 2005)
+                    ->  Bitmap Heap Scan on movie_info_idx mi_idx
+                          Recheck Cond: (movie_id = t.id)
+                          Filter: (info > '5.0'::text)
+                          ->  Bitmap Index Scan on movie_id_movie_info_idx
+                                Index Cond: (movie_id = t.id)
+        ->  Sort
+              Sort Key: it.id
+              ->  Seq Scan on info_type it
+                    Filter: ((info)::text = 'rating'::text)

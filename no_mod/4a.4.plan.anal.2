@@ -1,0 +1,32 @@
+Aggregate  (cost=178703.03..178704.03 rows=1 width=64) (actual time=68.143..68.143 rows=1 loops=1)
+  ->  Nested Loop  (cost=310.00..178703.03 rows=2332 width=23) (actual time=2.822..67.922 rows=740 loops=1)
+        Join Filter: (mi_idx.info_type_id = it.id)
+        Rows Removed by Join Filter: 405
+        ->  Nested Loop  (cost=310.00..177445.03 rows=1145 width=27) (actual time=2.810..67.484 rows=1145 loops=1)
+              ->  Nested Loop  (cost=307.00..161800.03 rows=2235 width=25) (actual time=2.799..60.002 rows=2235 loops=1)
+                    ->  Nested Loop  (cost=307.00..161800.00 rows=12951 width=4) (actual time=2.415..28.675 rows=12951 loops=1)
+                          ->  Seq Scan on keyword k  (cost=0.00..134170.00 rows=30 width=4) (actual time=0.884..15.493 rows=30 loops=1)
+                                Filter: (keyword ~~ '%sequel%'::text)
+                                Rows Removed by Filter: 134140
+                          ->  Bitmap Heap Scan on movie_keyword mk  (cost=307.00..614.00 rows=307 width=8) (actual time=0.064..0.370 rows=432 loops=30)
+                                Recheck Cond: (keyword_id = k.id)
+                                Heap Blocks: exact=6979
+                                ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..307.00 rows=307 width=0) (actual time=0.035..0.035 rows=432 loops=30)
+                                      Index Cond: (keyword_id = k.id)
+                    ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1012920 width=21) (actual time=0.002..0.002 rows=0 loops=12951)
+                          Index Cond: (id = mk.movie_id)
+                          Filter: (production_year > 2005)
+                          Rows Removed by Filter: 1
+              ->  Bitmap Heap Scan on movie_info_idx mi_idx  (cost=3.00..6.00 rows=1 width=14) (actual time=0.003..0.003 rows=1 loops=2235)
+                    Recheck Cond: (movie_id = t.id)
+                    Filter: (info > '5.0'::text)
+                    Rows Removed by Filter: 1
+                    Heap Blocks: exact=1249
+                    ->  Bitmap Index Scan on movie_id_movie_info_idx  (cost=0.00..3.00 rows=3 width=0) (actual time=0.002..0.002 rows=2 loops=2235)
+                          Index Cond: (movie_id = t.id)
+        ->  Materialize  (cost=0.00..113.00 rows=1 width=4) (actual time=0.000..0.000 rows=1 loops=1145)
+              ->  Seq Scan on info_type it  (cost=0.00..113.00 rows=1 width=4) (actual time=0.010..0.011 rows=1 loops=1)
+                    Filter: ((info)::text = 'rating'::text)
+                    Rows Removed by Filter: 112
+Planning time: 0.875 ms
+Execution time: 68.186 ms

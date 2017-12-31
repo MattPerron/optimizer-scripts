@@ -1,0 +1,32 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Seq Scan on company_name cn
+                                            Filter: ((country_code)::text = '[jp]'::text)
+                                      ->  Bitmap Heap Scan on movie_companies mc
+                                            Recheck Cond: (company_id = cn.id)
+                                            Filter: ((note ~~ '%(Japan)%'::text) AND (note !~~ '%(USA)%'::text) AND ((note ~~ '%(2006)%'::text) OR (note ~~ '%(2007)%'::text)))
+                                            ->  Bitmap Index Scan on company_id_movie_companies
+                                                  Index Cond: (company_id = cn.id)
+                                ->  Index Scan using title_pkey on title t
+                                      Index Cond: (id = mc.movie_id)
+                                      Filter: ((production_year >= 2006) AND (production_year <= 2007) AND ((title ~~ 'One Piece%'::text) OR (title ~~ 'Dragon Ball Z%'::text)))
+                          ->  Bitmap Heap Scan on cast_info ci
+                                Recheck Cond: (movie_id = t.id)
+                                Filter: (note = '(voice: English version)'::text)
+                                ->  Bitmap Index Scan on movie_id_cast_info
+                                      Index Cond: (movie_id = t.id)
+                    ->  Index Scan using name_pkey on name n
+                          Index Cond: (id = ci.person_id)
+                          Filter: ((name ~~ '%Yo%'::text) AND (name !~~ '%Yu%'::text))
+              ->  Index Scan using role_type_pkey on role_type rt
+                    Index Cond: (id = ci.role_id)
+                    Filter: ((role)::text = 'actress'::text)
+        ->  Bitmap Heap Scan on aka_name an
+              Recheck Cond: (person_id = n.id)
+              ->  Bitmap Index Scan on person_id_aka_name
+                    Index Cond: (person_id = n.id)

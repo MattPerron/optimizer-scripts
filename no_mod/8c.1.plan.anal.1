@@ -1,0 +1,42 @@
+Aggregate  (cost=15136826.62..15136827.62 rows=1 width=64) (actual time=16943.739..16943.740 rows=1 loops=1)
+  ->  Merge Join  (cost=14520715.62..15136826.62 rows=6734533 width=33) (actual time=15269.271..16437.657 rows=2487611 loops=1)
+        Merge Cond: (n1.id = a1.person_id)
+        ->  Sort  (cost=13619372.62..13619372.62 rows=2848681 width=25) (actual time=14853.734..15106.362 rows=1970658 loops=1)
+              Sort Key: ci.person_id
+              Sort Method: quicksort  Memory: 201610kB
+              ->  Nested Loop  (cost=12494045.25..13619372.62 rows=2848681 width=25) (actual time=9409.675..14300.153 rows=1970658 loops=1)
+                    ->  Merge Join  (cost=12494045.25..13619369.25 rows=2848681 width=21) (actual time=9409.655..10649.054 rows=1970658 loops=1)
+                          Merge Cond: (ci.movie_id = t.id)
+                          ->  Sort  (cost=9884832.00..9884832.00 rows=3020362 width=8) (actual time=1506.129..1821.994 rows=2728734 loops=1)
+                                Sort Key: ci.movie_id
+                                Sort Method: quicksort  Memory: 226224kB
+                                ->  Nested Loop  (cost=3294940.00..9884832.00 rows=3020362 width=8) (actual time=96.634..785.365 rows=2728943 loops=1)
+                                      ->  Seq Scan on role_type rt  (cost=0.00..12.00 rows=1 width=4) (actual time=0.007..0.011 rows=1 loops=1)
+                                            Filter: ((role)::text = 'writer'::text)
+                                            Rows Removed by Filter: 11
+                                      ->  Bitmap Heap Scan on cast_info ci  (cost=3294940.00..6589880.00 rows=3294940 width=12) (actual time=96.624..388.817 rows=2728943 loops=1)
+                                            Recheck Cond: (role_id = rt.id)
+                                            Heap Blocks: exact=19775
+                                            ->  Bitmap Index Scan on role_id_cast_info  (cost=0.00..3294940.00 rows=3294940 width=0) (actual time=93.593..93.593 rows=2728943 loops=1)
+                                                  Index Cond: (role_id = rt.id)
+                          ->  Sort  (cost=2609213.25..2609213.25 rows=941996 width=25) (actual time=7903.517..8089.155 rows=2311206 loops=1)
+                                Sort Key: mc.movie_id
+                                Sort Method: quicksort  Memory: 139536kB
+                                ->  Nested Loop  (cost=0.00..2609213.25 rows=941996 width=25) (actual time=0.048..7501.393 rows=1153798 loops=1)
+                                      ->  Nested Loop  (cost=0.00..2609212.50 rows=941996 width=4) (actual time=0.037..5212.987 rows=1153798 loops=1)
+                                            ->  Seq Scan on movie_companies mc  (cost=0.00..2609129.00 rows=2609129 width=8) (actual time=0.012..296.256 rows=2609129 loops=1)
+                                            ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=84843 width=4) (actual time=0.002..0.002 rows=0 loops=2609129)
+                                                  Index Cond: (id = mc.company_id)
+                                                  Filter: ((country_code)::text = '[us]'::text)
+                                                  Rows Removed by Filter: 1
+                                      ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=2528312 width=21) (actual time=0.002..0.002 rows=1 loops=1153798)
+                                            Index Cond: (id = mc.movie_id)
+                    ->  Index Only Scan using name_pkey on name n1  (cost=0.00..2.00 rows=4167491 width=4) (actual time=0.002..0.002 rows=1 loops=1970658)
+                          Index Cond: (id = ci.person_id)
+                          Heap Fetches: 1970658
+        ->  Sort  (cost=901343.00..901343.00 rows=901343 width=20) (actual time=415.528..636.245 rows=3063953 loops=1)
+              Sort Key: a1.person_id
+              Sort Method: quicksort  Memory: 89764kB
+              ->  Seq Scan on aka_name a1  (cost=0.00..901343.00 rows=901343 width=20) (actual time=0.013..131.688 rows=901343 loops=1)
+Planning time: 2.156 ms
+Execution time: 16950.122 ms

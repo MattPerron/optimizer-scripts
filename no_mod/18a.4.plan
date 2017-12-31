@@ -1,0 +1,34 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Merge Join
+                    Merge Cond: (mi_idx.movie_id = t.id)
+                    ->  Sort
+                          Sort Key: mi_idx.movie_id
+                          ->  Nested Loop
+                                ->  Seq Scan on info_type it2
+                                      Filter: ((info)::text = 'votes'::text)
+                                ->  Bitmap Heap Scan on movie_info_idx mi_idx
+                                      Recheck Cond: (info_type_id = it2.id)
+                                      ->  Bitmap Index Scan on info_type_id_movie_info_idx
+                                            Index Cond: (info_type_id = it2.id)
+                    ->  Sort
+                          Sort Key: mi.movie_id
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Seq Scan on info_type it1
+                                            Filter: ((info)::text = 'budget'::text)
+                                      ->  Bitmap Heap Scan on movie_info mi
+                                            Recheck Cond: (info_type_id = it1.id)
+                                            ->  Bitmap Index Scan on info_type_id_movie_info
+                                                  Index Cond: (info_type_id = it1.id)
+                                ->  Index Scan using title_pkey on title t
+                                      Index Cond: (id = mi.movie_id)
+              ->  Bitmap Heap Scan on cast_info ci
+                    Recheck Cond: (movie_id = t.id)
+                    Filter: (note = ANY ('{(producer),"(executive producer)"}'::text[]))
+                    ->  Bitmap Index Scan on movie_id_cast_info
+                          Index Cond: (movie_id = t.id)
+        ->  Index Scan using name_pkey on name n
+              Index Cond: (id = ci.person_id)
+              Filter: ((name ~~ '%Tim%'::text) AND ((gender)::text = 'm'::text))

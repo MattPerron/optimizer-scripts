@@ -1,0 +1,24 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Merge Join
+                    Merge Cond: (mc.company_type_id = ct.id)
+                    ->  Sort
+                          Sort Key: mc.company_type_id
+                          ->  Nested Loop
+                                ->  Seq Scan on movie_companies mc
+                                      Filter: ((note !~~ '%(TV)%'::text) AND (note ~~ '%(USA)%'::text))
+                                ->  Index Scan using title_pkey on title t
+                                      Index Cond: (id = mc.movie_id)
+                                      Filter: (production_year > 1990)
+                    ->  Sort
+                          Sort Key: ct.id
+                          ->  Seq Scan on company_type ct
+                                Filter: ((kind)::text = 'production companies'::text)
+              ->  Bitmap Heap Scan on movie_info mi
+                    Recheck Cond: (movie_id = t.id)
+                    Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German,USA,American}'::text[]))
+                    ->  Bitmap Index Scan on movie_id_movie_info
+                          Index Cond: (movie_id = t.id)
+        ->  Index Only Scan using info_type_pkey on info_type it
+              Index Cond: (id = mi.info_type_id)

@@ -1,0 +1,43 @@
+Aggregate  (cost=2234068.28..2234069.28 rows=1 width=128) (actual time=1775.076..1775.077 rows=1 loops=1)
+  ->  Nested Loop  (cost=514.00..2234068.28 rows=2 width=64) (actual time=423.266..1775.005 rows=40 loops=1)
+        ->  Nested Loop  (cost=514.00..2234068.28 rows=5 width=68) (actual time=423.255..1774.836 rows=40 loops=1)
+              ->  Nested Loop  (cost=509.00..2234024.28 rows=4 width=72) (actual time=91.301..1774.348 rows=60 loops=1)
+                    Join Filter: (ci.role_id = rt.id)
+                    ->  Nested Loop  (cost=509.00..2233964.28 rows=48 width=76) (actual time=91.293..1774.301 rows=60 loops=1)
+                          ->  Nested Loop  (cost=509.00..2233964.28 rows=237 width=55) (actual time=34.690..1773.377 rows=237 loops=1)
+                                ->  Nested Loop  (cost=509.00..2233964.28 rows=265 width=43) (actual time=34.681..1772.571 rows=265 loops=1)
+                                      ->  Nested Loop  (cost=0.00..901676.28 rows=1296 width=39) (actual time=6.794..1759.177 rows=1296 loops=1)
+                                            ->  Seq Scan on aka_name an  (cost=0.00..901343.00 rows=901343 width=20) (actual time=0.005..97.628 rows=901343 loops=1)
+                                            ->  Index Scan using name_pkey on name n  (cost=0.00..2.00 rows=5409 width=19) (actual time=0.002..0.002 rows=0 loops=901343)
+                                                  Index Cond: (id = an.person_id)
+                                                  Filter: ((name ~~ '%Angel%'::text) AND ((gender)::text = 'f'::text))
+                                                  Rows Removed by Filter: 1
+                                      ->  Bitmap Heap Scan on cast_info ci  (cost=509.00..1018.00 rows=10 width=16) (actual time=0.009..0.010 rows=0 loops=1296)
+                                            Recheck Cond: (person_id = n.id)
+                                            Filter: (note = '(voice)'::text)
+                                            Rows Removed by Filter: 43
+                                            Heap Blocks: exact=2161
+                                            ->  Bitmap Index Scan on person_id_cast_info  (cost=0.00..509.00 rows=509 width=0) (actual time=0.004..0.004 rows=43 loops=1296)
+                                                  Index Cond: (person_id = n.id)
+                                ->  Index Scan using char_name_pkey on char_name chn  (cost=0.00..2.00 rows=3140339 width=20) (actual time=0.002..0.002 rows=1 loops=265)
+                                      Index Cond: (id = ci.person_role_id)
+                          ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=512825 width=21) (actual time=0.004..0.004 rows=0 loops=237)
+                                Index Cond: (id = ci.movie_id)
+                                Filter: ((production_year >= 2007) AND (production_year <= 2010))
+                                Rows Removed by Filter: 1
+                    ->  Materialize  (cost=0.00..12.00 rows=1 width=4) (actual time=0.000..0.000 rows=1 loops=60)
+                          ->  Seq Scan on role_type rt  (cost=0.00..12.00 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+                                Filter: ((role)::text = 'actress'::text)
+                                Rows Removed by Filter: 1
+              ->  Bitmap Heap Scan on movie_companies mc  (cost=5.00..10.00 rows=1 width=8) (actual time=0.006..0.007 rows=1 loops=60)
+                    Recheck Cond: (movie_id = ci.movie_id)
+                    Filter: ((note ~~ '%(200%)%'::text) AND ((note ~~ '%(USA)%'::text) OR (note ~~ '%(worldwide)%'::text)))
+                    Rows Removed by Filter: 7
+                    Heap Blocks: exact=88
+                    ->  Bitmap Index Scan on movie_id_movie_companies  (cost=0.00..5.00 rows=5 width=0) (actual time=0.003..0.003 rows=8 loops=60)
+                          Index Cond: (movie_id = ci.movie_id)
+        ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=84843 width=4) (actual time=0.004..0.004 rows=1 loops=40)
+              Index Cond: (id = mc.company_id)
+              Filter: ((country_code)::text = '[us]'::text)
+Planning time: 3.958 ms
+Execution time: 1775.154 ms
