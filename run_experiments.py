@@ -1,15 +1,18 @@
 #!/usr/bin/python
 from __future__ import print_function
 import os
+import sys
 import psycopg2 as pg
 
 def main():
     letters = ['a', 'b', 'c', 'd', 'e', 'f']
-    simple_costs = True
+    simple_costs = True 
+    use_nestloop = True
+    use_seqscan = True
     index = 0
     directory = "/home/ubuntu/join-order-benchmark/"
-    output_dir = "no_mod"
-    with pg.connect('host=localhost user=ubuntu dbname=ubuntu') as conn, conn.cursor() as cur, open(os.path.join(output_dir, "aggregate_data.csv"), 'w') as agg_data:
+    output_dir = "no_base_simple_cost"
+    with pg.connect('host=localhost user=ubuntu dbname=ubuntu') as conn, conn.cursor() as cur, open(os.path.join(output_dir, "aggregate_data.csv"), 'w', 1) as agg_data:
         agg_data.write("query_index, query_name, num_tables, perfect_estimates, new_plan, execution_time1, execution_time2\n")
         for fname_num in range(1, 34):
             for fname_letter in letters:
@@ -40,6 +43,14 @@ def main():
                         cur.execute("set cpu_operator_cost=0;")
                         cur.execute("set cpu_tuple_cost=1;")
                         cur.execute("set cpu_index_tuple_cost=1;")
+                    if use_seqscan:
+                        cur.execute("set enable_seqscan=true;")
+                    else:
+                        cur.execute("set enable_seqscan=false;")
+                    if use_nestloop:
+                        cur.execute("set enable_nestloop=true;")
+                    else:
+                        cur.execute("set enable_nestloop=false;")
                     cur.execute("explain (costs false) " + contents);
                     plan = ''
                     with open(os.path.join(output_dir, "{}{}.{}.plan".format(fname_num, fname_letter, estimate)), 'w') as plan_file:
