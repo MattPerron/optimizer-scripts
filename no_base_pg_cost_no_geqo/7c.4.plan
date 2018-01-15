@@ -1,0 +1,37 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (n.id = an.person_id)
+        ->  Nested Loop
+              Join Filter: (pi.person_id = n.id)
+              ->  Hash Join
+                    Hash Cond: (pi.person_id = ci.person_id)
+                    ->  Nested Loop
+                          ->  Seq Scan on info_type it
+                                Filter: ((info)::text = 'mini biography'::text)
+                          ->  Bitmap Heap Scan on person_info pi
+                                Recheck Cond: (info_type_id = it.id)
+                                Filter: (note IS NOT NULL)
+                                ->  Bitmap Index Scan on info_type_id_person_info
+                                      Index Cond: (info_type_id = it.id)
+                    ->  Hash
+                          ->  Nested Loop
+                                ->  Hash Join
+                                      Hash Cond: (ml.linked_movie_id = t.id)
+                                      ->  Nested Loop
+                                            ->  Seq Scan on link_type lt
+                                                  Filter: ((link)::text = ANY ('{references,"referenced in",features,"featured in"}'::text[]))
+                                            ->  Bitmap Heap Scan on movie_link ml
+                                                  Recheck Cond: (link_type_id = lt.id)
+                                                  ->  Bitmap Index Scan on link_type_id_movie_link
+                                                        Index Cond: (link_type_id = lt.id)
+                                      ->  Hash
+                                            ->  Seq Scan on title t
+                                                  Filter: ((production_year >= 1980) AND (production_year <= 2010))
+                                ->  Index Scan using movie_id_cast_info on cast_info ci
+                                      Index Cond: (movie_id = t.id)
+              ->  Index Scan using name_pkey on name n
+                    Index Cond: (id = ci.person_id)
+                    Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'A%'::text))))
+        ->  Index Scan using person_id_aka_name on aka_name an
+              Index Cond: (person_id = ci.person_id)
+              Filter: ((name IS NOT NULL) AND ((name ~~ '%a%'::text) OR (name ~~ 'A%'::text)))

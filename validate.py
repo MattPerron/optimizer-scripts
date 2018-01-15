@@ -1,7 +1,7 @@
 import os
 
 def main():
-    path = 'no_base_simple_cost_no_seqscan'
+    path = 'no_base_pg_cost2'
     letters = ['a','b','c','d','e','f']
     for num in range(1, 34, 1):
         for letter in letters:

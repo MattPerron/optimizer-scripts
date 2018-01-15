@@ -1,0 +1,26 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (mc.company_type_id = ct.id)
+        ->  Nested Loop
+              ->  Nested Loop
+                    Join Filter: (ci.role_id = rt.id)
+                    ->  Seq Scan on role_type rt
+                          Filter: ((role)::text = 'actor'::text)
+                    ->  Nested Loop
+                          Join Filter: (t.id = ci.movie_id)
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Seq Scan on company_name cn
+                                            Filter: ((country_code)::text = '[ru]'::text)
+                                      ->  Index Scan using company_id_movie_companies on movie_companies mc
+                                            Index Cond: (company_id = cn.id)
+                                ->  Index Scan using title_pkey on title t
+                                      Index Cond: (id = mc.movie_id)
+                                      Filter: (production_year > 2005)
+                          ->  Index Scan using movie_id_cast_info on cast_info ci
+                                Index Cond: (movie_id = mc.movie_id)
+                                Filter: ((note ~~ '%(voice)%'::text) AND (note ~~ '%(uncredited)%'::text))
+              ->  Index Scan using char_name_pkey on char_name chn
+                    Index Cond: (id = ci.person_role_id)
+        ->  Materialize
+              ->  Seq Scan on company_type ct

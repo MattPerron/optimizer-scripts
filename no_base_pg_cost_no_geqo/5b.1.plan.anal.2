@@ -1,0 +1,23 @@
+Aggregate  (cost=56526.39..56526.40 rows=1 width=32) (actual time=192.202..192.202 rows=1 loops=1)
+  ->  Nested Loop  (cost=1.29..56526.38 rows=4 width=17) (actual time=192.199..192.199 rows=0 loops=1)
+        Join Filter: (mi.info_type_id = it.id)
+        ->  Seq Scan on info_type it  (cost=0.00..2.13 rows=113 width=4) (actual time=0.003..0.012 rows=113 loops=1)
+        ->  Materialize  (cost=1.29..56517.48 rows=4 width=21) (actual time=1.701..1.701 rows=0 loops=113)
+              ->  Nested Loop  (cost=1.29..56517.46 rows=4 width=21) (actual time=192.151..192.151 rows=0 loops=1)
+                    ->  Nested Loop  (cost=0.86..56507.45 rows=3 width=25) (actual time=192.151..192.151 rows=0 loops=1)
+                          ->  Nested Loop  (cost=0.43..56330.00 rows=21 width=4) (actual time=192.151..192.151 rows=0 loops=1)
+                                ->  Seq Scan on company_type ct  (cost=0.00..1.05 rows=1 width=4) (actual time=0.001..0.004 rows=1 loops=1)
+                                      Filter: ((kind)::text = 'production companies'::text)
+                                      Rows Removed by Filter: 3
+                                ->  Index Scan using company_type_id_movie_companies on movie_companies mc  (cost=0.43..56328.53 rows=42 width=8) (actual time=192.145..192.145 rows=0 loops=1)
+                                      Index Cond: (company_type_id = ct.id)
+                                      Filter: ((note ~~ '%(VHS)%'::text) AND (note ~~ '%(USA)%'::text) AND (note ~~ '%(1994)%'::text))
+                                      Rows Removed by Filter: 1334883
+                          ->  Index Scan using title_pkey on title t  (cost=0.43..8.45 rows=1 width=21) (never executed)
+                                Index Cond: (id = mc.movie_id)
+                                Filter: (production_year > 2010)
+                    ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..3.32 rows=2 width=8) (never executed)
+                          Index Cond: (movie_id = t.id)
+                          Filter: (info = ANY ('{USA,America}'::text[]))
+Planning time: 0.968 ms
+Execution time: 192.244 ms

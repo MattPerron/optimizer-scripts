@@ -1,0 +1,57 @@
+Aggregate  (cost=360297.96..360297.97 rows=1 width=96) (actual time=3701.710..3701.710 rows=1 loops=1)
+  ->  Hash Join  (cost=167346.57..355270.04 rows=670390 width=42) (actual time=2802.212..3498.879 rows=670390 loops=1)
+        Hash Cond: (mi.movie_id = t.id)
+        ->  Nested Loop  (cost=4026.76..179514.07 rows=3036719 width=4) (actual time=99.639..958.656 rows=3036719 loops=1)
+              ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.006..0.015 rows=1 loops=1)
+                    Filter: ((info)::text = 'release dates'::text)
+                    Rows Removed by Filter: 112
+              ->  Bitmap Heap Scan on movie_info mi  (cost=4026.76..177361.56 rows=215010 width=8) (actual time=99.631..501.125 rows=3036719 loops=1)
+                    Recheck Cond: (info_type_id = it2.id)
+                    Heap Blocks: exact=25448
+                    ->  Bitmap Index Scan on info_type_id_movie_info  (cost=0.00..3973.01 rows=215010 width=0) (actual time=95.900..95.900 rows=3036719 loops=1)
+                          Index Cond: (info_type_id = it2.id)
+        ->  Hash  (cost=162228.65..162228.65 rows=87293 width=54) (actual time=1910.941..1910.941 rows=87293 loops=1)
+              Buckets: 131072  Batches: 1  Memory Usage: 8689kB
+              ->  Hash Join  (cost=93531.89..162228.65 rows=87293 width=54) (actual time=1464.819..1885.049 rows=87293 loops=1)
+                    Hash Cond: (mc.company_id = cn.id)
+                    ->  Hash Join  (cost=86529.80..151406.12 rows=302610 width=39) (actual time=1410.169..1763.792 rows=302610 loops=1)
+                          Hash Cond: (mc.company_type_id = ct.id)
+                          ->  Hash Join  (cost=86528.74..143360.15 rows=773084 width=43) (actual time=930.936..1665.367 rows=773084 loops=1)
+                                Hash Cond: (mc.movie_id = t.id)
+                                ->  Seq Scan on movie_companies mc  (cost=0.00..44881.29 rows=2609129 width=12) (actual time=0.005..214.885 rows=2609129 loops=1)
+                                ->  Hash  (cost=83905.24..83905.24 rows=209880 width=31) (actual time=818.035..818.035 rows=209880 loops=1)
+                                      Buckets: 262144  Batches: 1  Memory Usage: 15015kB
+                                      ->  Hash Join  (cost=66827.21..83905.24 rows=209880 width=31) (actual time=543.424..759.574 rows=209880 loops=1)
+                                            Hash Cond: (miidx.movie_id = t.id)
+                                            ->  Nested Loop  (cost=5171.48..19319.05 rows=459925 width=10) (actual time=15.703..163.358 rows=459925 loops=1)
+                                                  ->  Seq Scan on info_type it  (cost=0.00..2.41 rows=1 width=4) (actual time=0.010..0.014 rows=1 loops=1)
+                                                        Filter: ((info)::text = 'rating'::text)
+                                                        Rows Removed by Filter: 112
+                                                  ->  Bitmap Heap Scan on movie_info_idx miidx  (cost=5171.48..16556.57 rows=276007 width=14) (actual time=15.689..86.642 rows=459925 loops=1)
+                                                        Recheck Cond: (info_type_id = it.id)
+                                                        Heap Blocks: exact=7934
+                                                        ->  Bitmap Index Scan on info_type_id_movie_info_idx  (cost=0.00..5102.48 rows=276007 width=0) (actual time=14.742..14.742 rows=459925 loops=1)
+                                                              Index Cond: (info_type_id = it.id)
+                                            ->  Hash  (cost=53370.41..53370.41 rows=662825 width=21) (actual time=425.488..425.488 rows=662825 loops=1)
+                                                  Buckets: 1048576  Batches: 1  Memory Usage: 44421kB
+                                                  ->  Nested Loop  (cost=7890.16..53370.41 rows=662825 width=21) (actual time=23.831..249.455 rows=662825 loops=1)
+                                                        ->  Seq Scan on kind_type kt  (cost=0.00..1.09 rows=1 width=4) (actual time=0.006..0.009 rows=1 loops=1)
+                                                              Filter: ((kind)::text = 'movie'::text)
+                                                              Rows Removed by Filter: 6
+                                                        ->  Bitmap Heap Scan on title t  (cost=7890.16..49155.48 rows=421385 width=25) (actual time=23.821..141.544 rows=662825 loops=1)
+                                                              Recheck Cond: (kind_id = kt.id)
+                                                              Heap Blocks: exact=12863
+                                                              ->  Bitmap Index Scan on kind_id_title  (cost=0.00..7784.82 rows=421385 width=0) (actual time=22.014..22.014 rows=662825 loops=1)
+                                                                    Index Cond: (kind_id = kt.id)
+                          ->  Hash  (cost=1.05..1.05 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+                                Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                ->  Seq Scan on company_type ct  (cost=0.00..1.05 rows=1 width=4) (actual time=0.005..0.006 rows=1 loops=1)
+                                      Filter: ((kind)::text = 'production companies'::text)
+                                      Rows Removed by Filter: 3
+                    ->  Hash  (cost=5932.46..5932.46 rows=85570 width=23) (actual time=54.513..54.513 rows=84843 loops=1)
+                          Buckets: 131072  Batches: 1  Memory Usage: 5810kB
+                          ->  Seq Scan on company_name cn  (cost=0.00..5932.46 rows=85570 width=23) (actual time=0.008..35.796 rows=84843 loops=1)
+                                Filter: ((country_code)::text = '[us]'::text)
+                                Rows Removed by Filter: 150154
+Planning time: 4.948 ms
+Execution time: 3702.064 ms

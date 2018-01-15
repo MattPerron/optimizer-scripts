@@ -1,0 +1,40 @@
+Aggregate  (cost=56134.98..56134.99 rows=1 width=64) (actual time=78.987..78.987 rows=1 loops=1)
+  ->  Nested Loop  (cost=2493.05..56134.97 rows=1 width=32) (actual time=14.649..78.966 rows=32 loops=1)
+        ->  Nested Loop  (cost=2492.62..56134.52 rows=1 width=23) (actual time=14.638..78.564 rows=151 loops=1)
+              ->  Nested Loop  (cost=2492.48..56134.34 rows=1 width=27) (actual time=14.633..78.029 rows=510 loops=1)
+                    ->  Nested Loop  (cost=2492.19..56134.00 rows=1 width=19) (actual time=14.597..73.948 rows=3354 loops=1)
+                          ->  Nested Loop  (cost=2491.63..56116.51 rows=1 width=27) (actual time=14.585..72.615 rows=20 loops=1)
+                                ->  Nested Loop  (cost=2491.20..56106.31 rows=17 width=23) (actual time=14.438..72.512 rows=17 loops=1)
+                                      ->  Nested Loop  (cost=2490.77..55564.87 rows=64 width=4) (actual time=13.223..72.058 rows=64 loops=1)
+                                            ->  Seq Scan on info_type it  (cost=0.00..2.41 rows=1 width=4) (actual time=0.006..0.015 rows=1 loops=1)
+                                                  Filter: ((info)::text = 'mini biography'::text)
+                                                  Rows Removed by Filter: 112
+                                            ->  Bitmap Heap Scan on person_info pi  (cost=2490.77..55562.45 rows=1 width=8) (actual time=13.214..72.023 rows=64 loops=1)
+                                                  Recheck Cond: (info_type_id = it.id)
+                                                  Filter: (note = 'Volker Boehm'::text)
+                                                  Rows Removed by Filter: 84120
+                                                  Heap Blocks: exact=40387
+                                                  ->  Bitmap Index Scan on info_type_id_person_info  (cost=0.00..2490.77 rows=134712 width=0) (actual time=6.784..6.784 rows=84184 loops=1)
+                                                        Index Cond: (info_type_id = it.id)
+                                      ->  Index Scan using name_pkey on name n  (cost=0.43..8.46 rows=1 width=19) (actual time=0.006..0.006 rows=0 loops=64)
+                                            Index Cond: (id = pi.person_id)
+                                            Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'B%'::text))))
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using person_id_aka_name on aka_name an  (cost=0.42..0.58 rows=2 width=4) (actual time=0.005..0.005 rows=1 loops=17)
+                                      Index Cond: (person_id = n.id)
+                                      Filter: (name ~~ '%a%'::text)
+                                      Rows Removed by Filter: 1
+                          ->  Index Scan using person_id_cast_info on cast_info ci  (cost=0.56..12.39 rows=509 width=8) (actual time=0.006..0.039 rows=168 loops=20)
+                                Index Cond: (person_id = n.id)
+                    ->  Index Scan using linked_movie_id_movie_link on movie_link ml  (cost=0.29..0.32 rows=2 width=8) (actual time=0.001..0.001 rows=0 loops=3354)
+                          Index Cond: (linked_movie_id = ci.movie_id)
+              ->  Index Scan using link_type_pkey on link_type lt  (cost=0.14..0.16 rows=1 width=4) (actual time=0.001..0.001 rows=0 loops=510)
+                    Index Cond: (id = ml.link_type_id)
+                    Filter: ((link)::text = 'features'::text)
+                    Rows Removed by Filter: 1
+        ->  Index Scan using title_pkey on title t  (cost=0.43..0.46 rows=1 width=21) (actual time=0.002..0.002 rows=0 loops=151)
+              Index Cond: (id = ci.movie_id)
+              Filter: ((production_year >= 1980) AND (production_year <= 1995))
+              Rows Removed by Filter: 1
+Planning time: 3.693 ms
+Execution time: 79.068 ms

@@ -1,0 +1,43 @@
+Aggregate  (cost=19351.72..19351.73 rows=1 width=64) (actual time=0.346..0.347 rows=1 loops=1)
+  ->  Hash Join  (cost=5174.28..19351.67 rows=10 width=59) (actual time=0.115..0.339 rows=10 loops=1)
+        Hash Cond: (mc.company_type_id = ct.id)
+        ->  Nested Loop  (cost=5173.20..19350.48 rows=10 width=63) (actual time=0.104..0.325 rows=10 loops=1)
+              ->  Nested Loop  (cost=5172.78..19335.76 rows=33 width=67) (actual time=0.098..0.238 rows=33 loops=1)
+                    Join Filter: (t.id = mc.movie_id)
+                    ->  Nested Loop  (cost=5172.35..19334.59 rows=2 width=71) (actual time=0.093..0.214 rows=2 loops=1)
+                          Join Filter: (mi.info_type_id = it1.id)
+                          Rows Removed by Join Filter: 219
+                          ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.009..0.010 rows=1 loops=1)
+                                Filter: ((info)::text = 'budget'::text)
+                                Rows Removed by Filter: 112
+                          ->  Nested Loop  (cost=5172.35..19329.41 rows=221 width=75) (actual time=0.053..0.184 rows=221 loops=1)
+                                Join Filter: (t.id = mi.movie_id)
+                                ->  Nested Loop  (cost=5171.91..19324.91 rows=2 width=25) (actual time=0.047..0.061 rows=2 loops=1)
+                                      ->  Nested Loop  (cost=5171.48..19319.05 rows=10 width=4) (actual time=0.016..0.019 rows=10 loops=1)
+                                            ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.008..0.008 rows=1 loops=1)
+                                                  Filter: ((info)::text = 'bottom 10 rank'::text)
+                                                  Rows Removed by Filter: 112
+                                            ->  Bitmap Heap Scan on movie_info_idx mi_idx  (cost=5171.48..16556.57 rows=276007 width=8) (actual time=0.007..0.008 rows=10 loops=1)
+                                                  Recheck Cond: (info_type_id = it2.id)
+                                                  Heap Blocks: exact=1
+                                                  ->  Bitmap Index Scan on info_type_id_movie_info_idx  (cost=0.00..5102.48 rows=276007 width=0) (actual time=0.004..0.004 rows=10 loops=1)
+                                                        Index Cond: (info_type_id = it2.id)
+                                      ->  Index Scan using title_pkey on title t  (cost=0.43..0.59 rows=1 width=21) (actual time=0.004..0.004 rows=0 loops=10)
+                                            Index Cond: (id = mi_idx.movie_id)
+                                            Filter: ((production_year > 2000) AND ((title ~~ 'Birdemic%'::text) OR (title ~~ '%Movie%'::text)))
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..1.74 rows=41 width=50) (actual time=0.005..0.037 rows=110 loops=2)
+                                      Index Cond: (movie_id = mi_idx.movie_id)
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.52 rows=5 width=12) (actual time=0.004..0.008 rows=16 loops=2)
+                          Index Cond: (movie_id = mi.movie_id)
+              ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.45 rows=1 width=4) (actual time=0.002..0.002 rows=0 loops=33)
+                    Index Cond: (id = mc.company_id)
+                    Filter: ((country_code)::text = '[us]'::text)
+                    Rows Removed by Filter: 1
+        ->  Hash  (cost=1.06..1.06 rows=2 width=4) (actual time=0.007..0.007 rows=2 loops=1)
+              Buckets: 1024  Batches: 1  Memory Usage: 9kB
+              ->  Seq Scan on company_type ct  (cost=0.00..1.06 rows=2 width=4) (actual time=0.004..0.005 rows=2 loops=1)
+                    Filter: ((kind IS NOT NULL) AND (((kind)::text = 'production companies'::text) OR ((kind)::text = 'distributors'::text)))
+                    Rows Removed by Filter: 2
+Planning time: 3.419 ms
+Execution time: 0.404 ms

@@ -1,0 +1,57 @@
+Aggregate  (cost=6969.86..6969.87 rows=1 width=96) (actual time=291.887..291.888 rows=1 loops=1)
+  ->  Nested Loop  (cost=4.00..6969.85 rows=1 width=48) (actual time=147.054..291.856 rows=45 loops=1)
+        Join Filter: (ci.role_id = rt.id)
+        ->  Nested Loop  (cost=4.00..6968.69 rows=1 width=52) (actual time=147.049..291.808 rows=45 loops=1)
+              ->  Nested Loop  (cost=3.57..6966.85 rows=1 width=45) (actual time=141.564..290.596 rows=636 loops=1)
+                    ->  Nested Loop  (cost=3.15..6964.95 rows=1 width=49) (actual time=7.128..269.745 rows=13110 loops=1)
+                          Join Filter: (mi.info_type_id = it.id)
+                          ->  Nested Loop  (cost=3.15..6962.53 rows=1 width=53) (actual time=7.121..243.076 rows=13110 loops=1)
+                                Join Filter: (t.id = mi.movie_id)
+                                ->  Nested Loop  (cost=2.71..6930.55 rows=1 width=65) (actual time=7.098..42.317 rows=4750 loops=1)
+                                      ->  Nested Loop  (cost=2.28..6928.81 rows=1 width=53) (actual time=7.089..33.568 rows=4855 loops=1)
+                                            ->  Nested Loop  (cost=1.86..6927.80 rows=1 width=49) (actual time=7.073..28.958 rows=1841 loops=1)
+                                                  Join Filter: (t.id = ci.movie_id)
+                                                  ->  Nested Loop  (cost=1.29..6889.01 rows=1 width=33) (actual time=6.787..24.607 rows=83 loops=1)
+                                                        Join Filter: (t.id = mk.movie_id)
+                                                        ->  Nested Loop  (cost=0.86..6885.98 rows=1 width=25) (actual time=6.728..24.477 rows=4 loops=1)
+                                                              ->  Nested Loop  (cost=0.43..6868.05 rows=11 width=4) (actual time=6.638..24.070 rows=99 loops=1)
+                                                                    ->  Seq Scan on company_name cn  (cost=0.00..6519.95 rows=1 width=4) (actual time=6.617..23.934 rows=1 loops=1)
+                                                                          Filter: (((country_code)::text = '[us]'::text) AND (name = 'DreamWorks Animation'::text))
+                                                                          Rows Removed by Filter: 234996
+                                                                    ->  Index Scan using company_id_movie_companies on movie_companies mc  (cost=0.43..346.77 rows=132 width=8) (actual time=0.018..0.115 rows=99 loops=1)
+                                                                          Index Cond: (company_id = cn.id)
+                                                              ->  Index Scan using title_pkey on title t  (cost=0.43..1.62 rows=1 width=21) (actual time=0.004..0.004 rows=0 loops=99)
+                                                                    Index Cond: (id = mc.movie_id)
+                                                                    Filter: ((production_year > 2010) AND (title ~~ 'Kung Fu Panda%'::text))
+                                                                    Rows Removed by Filter: 1
+                                                        ->  Index Scan using movie_id_movie_keyword on movie_keyword mk  (cost=0.43..2.46 rows=46 width=8) (actual time=0.020..0.026 rows=21 loops=4)
+                                                              Index Cond: (movie_id = mc.movie_id)
+                                                  ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..38.78 rows=1 width=16) (actual time=0.005..0.048 rows=22 loops=83)
+                                                        Index Cond: (movie_id = mk.movie_id)
+                                                        Filter: (note = ANY ('{(voice),"(voice: Japanese version)","(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                                        Rows Removed by Filter: 75
+                                            ->  Index Only Scan using person_id_aka_name on aka_name an  (cost=0.42..0.99 rows=2 width=4) (actual time=0.001..0.002 rows=3 loops=1841)
+                                                  Index Cond: (person_id = ci.person_id)
+                                                  Heap Fetches: 0
+                                      ->  Index Scan using char_name_pkey on char_name chn  (cost=0.43..1.74 rows=1 width=20) (actual time=0.001..0.001 rows=1 loops=4855)
+                                            Index Cond: (id = ci.person_role_id)
+                                ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..31.97 rows=1 width=8) (actual time=0.006..0.042 rows=3 loops=4750)
+                                      Index Cond: (movie_id = mk.movie_id)
+                                      Filter: ((info IS NOT NULL) AND ((info ~~ 'Japan:%201%'::text) OR (info ~~ 'USA:%201%'::text)))
+                                      Rows Removed by Filter: 210
+                          ->  Seq Scan on info_type it  (cost=0.00..2.41 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=13110)
+                                Filter: ((info)::text = 'release dates'::text)
+                                Rows Removed by Filter: 15
+                    ->  Index Scan using keyword_pkey on keyword k  (cost=0.42..1.47 rows=1 width=4) (actual time=0.001..0.001 rows=0 loops=13110)
+                          Index Cond: (id = mk.keyword_id)
+                          Filter: (keyword = ANY ('{hero,martial-arts,hand-to-hand-combat,computer-animated-movie}'::text[]))
+                          Rows Removed by Filter: 1
+              ->  Index Scan using name_pkey on name n  (cost=0.43..1.85 rows=1 width=19) (actual time=0.002..0.002 rows=0 loops=636)
+                    Index Cond: (id = ci.person_id)
+                    Filter: ((name ~~ '%An%'::text) AND ((gender)::text = 'f'::text))
+                    Rows Removed by Filter: 1
+        ->  Seq Scan on role_type rt  (cost=0.00..1.15 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=45)
+              Filter: ((role)::text = 'actress'::text)
+              Rows Removed by Filter: 1
+Planning time: 53.450 ms
+Execution time: 292.011 ms
