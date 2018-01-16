@@ -1,0 +1,51 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (cc.subject_id = cct1.id)
+        ->  Nested Loop
+              Join Filter: (ml.movie_id = mi.movie_id)
+              ->  Nested Loop
+                    Join Filter: (cct2.id = cc.status_id)
+                    ->  Seq Scan on comp_cast_type cct2
+                          Filter: ((kind)::text = 'complete'::text)
+                    ->  Nested Loop
+                          Join Filter: (ml.movie_id = cc.movie_id)
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      Join Filter: (ct.id = mc.company_type_id)
+                                      ->  Seq Scan on company_type ct
+                                            Filter: ((kind)::text = 'production companies'::text)
+                                      ->  Nested Loop
+                                            Join Filter: (ml.movie_id = mc.movie_id)
+                                            ->  Nested Loop
+                                                  Join Filter: (ml.movie_id = t.id)
+                                                  ->  Nested Loop
+                                                        Join Filter: (lt.id = ml.link_type_id)
+                                                        ->  Nested Loop
+                                                              ->  Nested Loop
+                                                                    ->  Seq Scan on keyword k
+                                                                          Filter: (keyword = 'sequel'::text)
+                                                                    ->  Bitmap Heap Scan on movie_keyword mk
+                                                                          Recheck Cond: (keyword_id = k.id)
+                                                                          ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                                                Index Cond: (keyword_id = k.id)
+                                                              ->  Index Scan using movie_id_movie_link on movie_link ml
+                                                                    Index Cond: (movie_id = mk.movie_id)
+                                                        ->  Materialize
+                                                              ->  Seq Scan on link_type lt
+                                                                    Filter: ((link)::text ~~ '%follow%'::text)
+                                                  ->  Index Scan using title_pkey on title t
+                                                        Index Cond: (id = mk.movie_id)
+                                                        Filter: ((production_year >= 1950) AND (production_year <= 2000))
+                                            ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                                  Index Cond: (movie_id = mk.movie_id)
+                                                  Filter: (note IS NULL)
+                                ->  Index Scan using company_name_pkey on company_name cn
+                                      Index Cond: (id = mc.company_id)
+                                      Filter: (((country_code)::text <> '[pl]'::text) AND ((name ~~ '%Film%'::text) OR (name ~~ '%Warner%'::text)))
+                          ->  Index Scan using movie_id_complete_cast on complete_cast cc
+                                Index Cond: (movie_id = mk.movie_id)
+              ->  Index Scan using movie_id_movie_info on movie_info mi
+                    Index Cond: (movie_id = mk.movie_id)
+                    Filter: (info = ANY ('{Sweden,Germany,Swedish,German}'::text[]))
+        ->  Seq Scan on comp_cast_type cct1
+              Filter: ((kind)::text = ANY ('{cast,crew}'::text[]))

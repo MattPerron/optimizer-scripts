@@ -1,0 +1,41 @@
+Aggregate  (cost=167357.26..167357.27 rows=1 width=128) (actual time=903.616..903.617 rows=1 loops=1)
+  ->  Nested Loop  (cost=31679.65..167357.24 rows=2 width=64) (actual time=597.705..903.565 rows=40 loops=1)
+        ->  Nested Loop  (cost=31679.24..167354.65 rows=5 width=68) (actual time=597.691..903.427 rows=40 loops=1)
+              ->  Nested Loop  (cost=31678.81..167353.23 rows=2 width=56) (actual time=591.796..903.303 rows=41 loops=1)
+                    ->  Hash Join  (cost=31678.38..167346.88 rows=9 width=47) (actual time=591.121..902.973 rows=103 loops=1)
+                          Hash Cond: (ci.role_id = rt.id)
+                          ->  Nested Loop  (cost=31677.21..167344.50 rows=103 width=51) (actual time=591.108..902.925 rows=103 loops=1)
+                                ->  Nested Loop  (cost=31676.78..167156.25 rows=265 width=43) (actual time=591.096..901.720 rows=265 loops=1)
+                                      Join Filter: (n.id = ci.person_id)
+                                      ->  Hash Join  (cost=31676.22..151043.83 rows=1296 width=39) (actual time=586.573..890.298 rows=1296 loops=1)
+                                            Hash Cond: (n.id = an.person_id)
+                                            ->  Seq Scan on name n  (cost=0.00..118125.36 rows=5409 width=19) (actual time=220.651..522.774 rows=5409 loops=1)
+                                                  Filter: ((name ~~ '%Angel%'::text) AND ((gender)::text = 'f'::text))
+                                                  Rows Removed by Filter: 4162082
+                                            ->  Hash  (cost=20409.43..20409.43 rows=901343 width=20) (actual time=362.951..362.951 rows=901343 loops=1)
+                                                  Buckets: 1048576  Batches: 1  Memory Usage: 55917kB
+                                                  ->  Seq Scan on aka_name an  (cost=0.00..20409.43 rows=901343 width=20) (actual time=0.007..143.740 rows=901343 loops=1)
+                                      ->  Index Scan using person_id_cast_info on cast_info ci  (cost=0.56..12.31 rows=10 width=16) (actual time=0.008..0.009 rows=0 loops=1296)
+                                            Index Cond: (person_id = an.person_id)
+                                            Filter: (note = '(voice)'::text)
+                                            Rows Removed by Filter: 43
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.70 rows=1 width=8) (actual time=0.003..0.004 rows=0 loops=265)
+                                      Index Cond: (movie_id = ci.movie_id)
+                                      Filter: ((note ~~ '%(200%)%'::text) AND ((note ~~ '%(USA)%'::text) OR (note ~~ '%(worldwide)%'::text)))
+                                      Rows Removed by Filter: 4
+                          ->  Hash  (cost=1.15..1.15 rows=1 width=4) (actual time=0.008..0.008 rows=1 loops=1)
+                                Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                ->  Seq Scan on role_type rt  (cost=0.00..1.15 rows=1 width=4) (actual time=0.005..0.007 rows=1 loops=1)
+                                      Filter: ((role)::text = 'actress'::text)
+                                      Rows Removed by Filter: 11
+                    ->  Index Scan using title_pkey on title t  (cost=0.43..0.70 rows=1 width=21) (actual time=0.003..0.003 rows=0 loops=103)
+                          Index Cond: (id = ci.movie_id)
+                          Filter: ((production_year >= 2007) AND (production_year <= 2010))
+                          Rows Removed by Filter: 1
+              ->  Index Scan using char_name_pkey on char_name chn  (cost=0.43..0.71 rows=1 width=20) (actual time=0.002..0.002 rows=1 loops=41)
+                    Index Cond: (id = ci.person_role_id)
+        ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.52 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=40)
+              Index Cond: (id = mc.company_id)
+              Filter: ((country_code)::text = '[us]'::text)
+Planning time: 3.474 ms
+Execution time: 903.918 ms

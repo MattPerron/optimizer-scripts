@@ -1,0 +1,38 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (mi.info_type_id = it1.id)
+              ->  Nested Loop
+                    Join Filter: (t.id = mi.movie_id)
+                    ->  Nested Loop
+                          Join Filter: (t.id = ci.movie_id)
+                          ->  Nested Loop
+                                Join Filter: (mi_idx.info_type_id = it2.id)
+                                ->  Seq Scan on info_type it2
+                                      Filter: ((info)::text = 'votes'::text)
+                                ->  Nested Loop
+                                      Join Filter: (t.id = mi_idx.movie_id)
+                                      ->  Nested Loop
+                                            ->  Nested Loop
+                                                  ->  Seq Scan on keyword k
+                                                        Filter: (keyword = ANY ('{murder,blood,gore,death,female-nudity}'::text[]))
+                                                  ->  Bitmap Heap Scan on movie_keyword mk
+                                                        Recheck Cond: (keyword_id = k.id)
+                                                        ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                              Index Cond: (keyword_id = k.id)
+                                            ->  Index Scan using title_pkey on title t
+                                                  Index Cond: (id = mk.movie_id)
+                                                  Filter: ((production_year > 2010) AND (title ~~ 'Vampire%'::text))
+                                      ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx
+                                            Index Cond: (movie_id = mk.movie_id)
+                          ->  Index Scan using movie_id_cast_info on cast_info ci
+                                Index Cond: (movie_id = mk.movie_id)
+                                Filter: (note = ANY ('{(writer),"(head writer)","(written by)",(story),"(story editor)"}'::text[]))
+                    ->  Index Scan using movie_id_movie_info on movie_info mi
+                          Index Cond: (movie_id = mk.movie_id)
+                          Filter: (info = 'Horror'::text)
+              ->  Seq Scan on info_type it1
+                    Filter: ((info)::text = 'genres'::text)
+        ->  Index Scan using name_pkey on name n
+              Index Cond: (id = ci.person_id)
+              Filter: ((gender)::text = 'm'::text)

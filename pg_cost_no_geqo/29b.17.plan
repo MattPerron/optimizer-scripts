@@ -1,0 +1,70 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (n.id = an.person_id)
+        ->  Nested Loop
+              ->  Nested Loop
+                    Join Filter: (t.id = mc.movie_id)
+                    ->  Nested Loop
+                          Join Filter: (ci.person_id = n.id)
+                          ->  Nested Loop
+                                Join Filter: (pi.info_type_id = it3.id)
+                                ->  Seq Scan on info_type it3
+                                      Filter: ((info)::text = 'height'::text)
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            Join Filter: (mi.info_type_id = it.id)
+                                            ->  Nested Loop
+                                                  Join Filter: (t.id = mi.movie_id)
+                                                  ->  Nested Loop
+                                                        ->  Nested Loop
+                                                              Join Filter: (ci.role_id = rt.id)
+                                                              ->  Seq Scan on role_type rt
+                                                                    Filter: ((role)::text = 'actress'::text)
+                                                              ->  Nested Loop
+                                                                    Join Filter: (t.id = ci.movie_id)
+                                                                    ->  Nested Loop
+                                                                          Join Filter: (cc.status_id = cct2.id)
+                                                                          ->  Nested Loop
+                                                                                Join Filter: (cc.subject_id = cct1.id)
+                                                                                ->  Nested Loop
+                                                                                      Join Filter: (t.id = cc.movie_id)
+                                                                                      ->  Nested Loop
+                                                                                            ->  Nested Loop
+                                                                                                  ->  Seq Scan on keyword k
+                                                                                                        Filter: (keyword = 'computer-animation'::text)
+                                                                                                  ->  Bitmap Heap Scan on movie_keyword mk
+                                                                                                        Recheck Cond: (keyword_id = k.id)
+                                                                                                        ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                                                                              Index Cond: (keyword_id = k.id)
+                                                                                            ->  Index Scan using title_pkey on title t
+                                                                                                  Index Cond: (id = mk.movie_id)
+                                                                                                  Filter: ((production_year >= 2000) AND (production_year <= 2005) AND (title = 'Shrek 2'::text))
+                                                                                      ->  Index Scan using movie_id_complete_cast on complete_cast cc
+                                                                                            Index Cond: (movie_id = mk.movie_id)
+                                                                                ->  Seq Scan on comp_cast_type cct1
+                                                                                      Filter: ((kind)::text = 'cast'::text)
+                                                                          ->  Seq Scan on comp_cast_type cct2
+                                                                                Filter: ((kind)::text = 'complete+verified'::text)
+                                                                    ->  Index Scan using movie_id_cast_info on cast_info ci
+                                                                          Index Cond: (movie_id = mk.movie_id)
+                                                                          Filter: (note = ANY ('{(voice),"(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                                        ->  Index Scan using char_name_pkey on char_name chn
+                                                              Index Cond: (id = ci.person_role_id)
+                                                              Filter: (name = 'Queen'::text)
+                                                  ->  Index Scan using movie_id_movie_info on movie_info mi
+                                                        Index Cond: (movie_id = mk.movie_id)
+                                                        Filter: (info ~~ 'USA:%200%'::text)
+                                            ->  Seq Scan on info_type it
+                                                  Filter: ((info)::text = 'release dates'::text)
+                                      ->  Index Scan using person_id_person_info on person_info pi
+                                            Index Cond: (person_id = ci.person_id)
+                          ->  Index Scan using name_pkey on name n
+                                Index Cond: (id = pi.person_id)
+                                Filter: ((name ~~ '%An%'::text) AND ((gender)::text = 'f'::text))
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                          Index Cond: (movie_id = mk.movie_id)
+              ->  Index Scan using company_name_pkey on company_name cn
+                    Index Cond: (id = mc.company_id)
+                    Filter: ((country_code)::text = '[us]'::text)
+        ->  Index Only Scan using person_id_aka_name on aka_name an
+              Index Cond: (person_id = pi.person_id)

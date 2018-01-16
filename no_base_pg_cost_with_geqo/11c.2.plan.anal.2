@@ -1,0 +1,44 @@
+Aggregate  (cost=13753.39..13753.40 rows=1 width=96) (actual time=158.738..158.739 rows=1 loops=1)
+  ->  Nested Loop  (cost=9757.15..13753.39 rows=1 width=60) (actual time=73.195..155.876 rows=6946 loops=1)
+        Join Filter: (ml.movie_id = t.id)
+        ->  Nested Loop  (cost=9756.72..13752.88 rows=1 width=55) (actual time=73.185..143.715 rows=6946 loops=1)
+              ->  Nested Loop  (cost=9756.58..13752.73 rows=1 width=59) (actual time=73.177..137.418 rows=6946 loops=1)
+                    ->  Merge Join  (cost=9756.16..13718.95 rows=74 width=44) (actual time=70.899..112.605 rows=14916 loops=1)
+                          Merge Cond: (mk.movie_id = ml.movie_id)
+                          ->  Nested Loop  (cost=9753.77..151562.10 rows=242 width=36) (actual time=70.839..99.907 rows=944 loops=1)
+                                Join Filter: (mc.company_type_id = ct.id)
+                                Rows Removed by Join Filter: 336
+                                ->  Merge Join  (cost=9753.77..146546.96 rows=127342 width=40) (actual time=70.827..99.475 rows=1056 loops=1)
+                                      Merge Cond: (mc.movie_id = mk.movie_id)
+                                      ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..131530.78 rows=1345267 width=36) (actual time=0.008..24.520 rows=50865 loops=1)
+                                            Filter: (note IS NOT NULL)
+                                            Rows Removed by Filter: 49323
+                                      ->  Sort  (cost=9743.01..9861.52 rows=47403 width=4) (actual time=70.619..70.730 rows=1249 loops=1)
+                                            Sort Key: mk.movie_id
+                                            Sort Method: quicksort  Memory: 3759kB
+                                            ->  Nested Loop  (cost=6.74..6061.53 rows=47403 width=4) (actual time=2.119..60.457 rows=47403 loops=1)
+                                                  ->  Seq Scan on keyword k  (cost=0.00..2793.84 rows=3 width=4) (actual time=0.608..14.008 rows=3 loops=1)
+                                                        Filter: (keyword = ANY ('{sequel,revenge,based-on-novel}'::text[]))
+                                                        Rows Removed by Filter: 134167
+                                                  ->  Bitmap Heap Scan on movie_keyword mk  (cost=6.74..1086.25 rows=298 width=8) (actual time=2.235..12.945 rows=15801 loops=3)
+                                                        Recheck Cond: (keyword_id = k.id)
+                                                        Heap Blocks: exact=23953
+                                                        ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..6.67 rows=298 width=0) (actual time=1.194..1.194 rows=15801 loops=3)
+                                                              Index Cond: (keyword_id = k.id)
+                                ->  Materialize  (cost=0.00..1.06 rows=3 width=4) (actual time=0.000..0.000 rows=1 loops=1056)
+                                      ->  Seq Scan on company_type ct  (cost=0.00..1.05 rows=3 width=4) (actual time=0.006..0.007 rows=3 loops=1)
+                                            Filter: ((kind IS NOT NULL) AND ((kind)::text <> 'production companies'::text))
+                                            Rows Removed by Filter: 1
+                          ->  Index Scan using movie_id_movie_link on movie_link ml  (cost=0.29..959.51 rows=29997 width=8) (actual time=0.010..6.734 rows=43899 loops=1)
+                    ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.46 rows=1 width=23) (actual time=0.001..0.001 rows=0 loops=14916)
+                          Index Cond: (id = mc.company_id)
+                          Filter: (((country_code)::text <> '[pl]'::text) AND ((name ~~ '20th Century Fox%'::text) OR (name ~~ 'Twentieth Century Fox%'::text)))
+                          Rows Removed by Filter: 1
+              ->  Index Only Scan using link_type_pkey on link_type lt  (cost=0.14..0.16 rows=1 width=4) (actual time=0.000..0.000 rows=1 loops=6946)
+                    Index Cond: (id = ml.link_type_id)
+                    Heap Fetches: 0
+        ->  Index Scan using title_pkey on title t  (cost=0.43..0.49 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=6946)
+              Index Cond: (id = mk.movie_id)
+              Filter: (production_year > 1950)
+Planning time: 3.433 ms
+Execution time: 158.822 ms

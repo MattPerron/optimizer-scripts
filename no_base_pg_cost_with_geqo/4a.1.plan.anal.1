@@ -1,0 +1,29 @@
+Aggregate  (cost=16288.22..16288.23 rows=1 width=64) (actual time=78.146..78.147 rows=1 loops=1)
+  ->  Nested Loop  (cost=7.60..16288.21 rows=2 width=23) (actual time=2.948..77.918 rows=740 loops=1)
+        Join Filter: (mi_idx.movie_id = t.id)
+        ->  Nested Loop  (cost=7.17..16286.20 rows=4 width=14) (actual time=2.286..61.768 rows=5820 loops=1)
+              Join Filter: (mi_idx.info_type_id = it.id)
+              Rows Removed by Join Filter: 2609
+              ->  Seq Scan on info_type it  (cost=0.00..2.41 rows=1 width=4) (actual time=0.009..0.011 rows=1 loops=1)
+                    Filter: ((info)::text = 'rating'::text)
+                    Rows Removed by Filter: 112
+              ->  Nested Loop  (cost=7.17..16277.62 rows=494 width=18) (actual time=2.275..60.480 rows=8429 loops=1)
+                    ->  Nested Loop  (cost=6.74..16055.17 rows=438 width=4) (actual time=2.266..29.232 rows=12951 loops=1)
+                          ->  Seq Scan on keyword k  (cost=0.00..2626.12 rows=13 width=4) (actual time=0.903..15.819 rows=30 loops=1)
+                                Filter: (keyword ~~ '%sequel%'::text)
+                                Rows Removed by Filter: 134140
+                          ->  Bitmap Heap Scan on movie_keyword mk  (cost=6.74..1030.02 rows=298 width=8) (actual time=0.059..0.380 rows=432 loops=30)
+                                Recheck Cond: (keyword_id = k.id)
+                                Heap Blocks: exact=6979
+                                ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..6.67 rows=298 width=0) (actual time=0.033..0.033 rows=432 loops=30)
+                                      Index Cond: (keyword_id = k.id)
+                    ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.43..0.50 rows=1 width=14) (actual time=0.002..0.002 rows=1 loops=12951)
+                          Index Cond: (movie_id = mk.movie_id)
+                          Filter: (info > '5.0'::text)
+                          Rows Removed by Filter: 1
+        ->  Index Scan using title_pkey on title t  (cost=0.43..0.49 rows=1 width=21) (actual time=0.003..0.003 rows=0 loops=5820)
+              Index Cond: (id = mk.movie_id)
+              Filter: (production_year > 2005)
+              Rows Removed by Filter: 1
+Planning time: 0.804 ms
+Execution time: 78.186 ms

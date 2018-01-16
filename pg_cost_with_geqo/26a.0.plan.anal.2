@@ -1,0 +1,61 @@
+Aggregate  (cost=11765.82..11765.83 rows=1 width=128) (actual time=1904.565..1904.565 rows=1 loops=1)
+  ->  Nested Loop  (cost=5.26..11765.81 rows=1 width=54) (actual time=7.304..1903.533 rows=1728 loops=1)
+        ->  Nested Loop  (cost=4.83..11764.44 rows=3 width=42) (actual time=0.771..1817.624 rows=58947 loops=1)
+              ->  Nested Loop  (cost=4.40..11763.08 rows=3 width=31) (actual time=0.763..1623.327 rows=58947 loops=1)
+                    Join Filter: (kt.id = t.kind_id)
+                    Rows Removed by Join Filter: 7025
+                    ->  Seq Scan on kind_type kt  (cost=0.00..1.09 rows=1 width=4) (actual time=0.005..0.006 rows=1 loops=1)
+                          Filter: ((kind)::text = 'movie'::text)
+                          Rows Removed by Filter: 6
+                    ->  Nested Loop  (cost=4.40..11761.74 rows=20 width=35) (actual time=0.757..1612.553 rows=65972 loops=1)
+                          Join Filter: (mk.movie_id = t.id)
+                          ->  Nested Loop  (cost=3.97..11744.91 rows=36 width=30) (actual time=0.751..1407.196 rows=136158 loops=1)
+                                ->  Nested Loop  (cost=3.41..11743.04 rows=1 width=18) (actual time=0.741..1260.566 rows=1423 loops=1)
+                                      ->  Nested Loop  (cost=2.99..11098.17 rows=1429 width=22) (actual time=0.152..446.000 rows=411631 loops=1)
+                                            Join Filter: (cc.movie_id = mk.movie_id)
+                                            ->  Nested Loop  (cost=2.55..11017.87 rows=31 width=14) (actual time=0.146..253.195 rows=17898 loops=1)
+                                                  Join Filter: (mi_idx.info_type_id = it2.id)
+                                                  Rows Removed by Join Filter: 8859
+                                                  ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.009..0.012 rows=1 loops=1)
+                                                        Filter: ((info)::text = 'rating'::text)
+                                                        Rows Removed by Filter: 112
+                                                  ->  Nested Loop  (cost=2.55..10972.10 rows=3469 width=18) (actual time=0.049..249.005 rows=26757 loops=1)
+                                                        ->  Hash Join  (cost=2.12..3841.16 rows=8443 width=4) (actual time=0.017..67.735 rows=85941 loops=1)
+                                                              Hash Cond: (cc.subject_id = cct1.id)
+                                                              ->  Hash Join  (cost=1.06..3488.66 rows=33772 width=8) (actual time=0.009..45.740 rows=135086 loops=1)
+                                                                    Hash Cond: (cc.status_id = cct2.id)
+                                                                    ->  Seq Scan on complete_cast cc  (cost=0.00..2081.86 rows=135086 width=12) (actual time=0.003..12.911 rows=135086 loops=1)
+                                                                    ->  Hash  (cost=1.05..1.05 rows=1 width=4) (actual time=0.003..0.003 rows=2 loops=1)
+                                                                          Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                                          ->  Seq Scan on comp_cast_type cct2  (cost=0.00..1.05 rows=1 width=4) (actual time=0.001..0.002 rows=2 loops=1)
+                                                                                Filter: ((kind)::text ~~ '%complete%'::text)
+                                                                                Rows Removed by Filter: 2
+                                                              ->  Hash  (cost=1.05..1.05 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+                                                                    Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                                    ->  Seq Scan on comp_cast_type cct1  (cost=0.00..1.05 rows=1 width=4) (actual time=0.001..0.002 rows=1 loops=1)
+                                                                          Filter: ((kind)::text = 'cast'::text)
+                                                                          Rows Removed by Filter: 3
+                                                        ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.43..0.83 rows=1 width=14) (actual time=0.002..0.002 rows=0 loops=85941)
+                                                              Index Cond: (movie_id = cc.movie_id)
+                                                              Filter: (info > '7.0'::text)
+                                                              Rows Removed by Filter: 2
+                                            ->  Index Scan using movie_id_movie_keyword on movie_keyword mk  (cost=0.43..2.02 rows=46 width=8) (actual time=0.002..0.006 rows=23 loops=17898)
+                                                  Index Cond: (movie_id = mi_idx.movie_id)
+                                      ->  Index Scan using keyword_pkey on keyword k  (cost=0.42..0.45 rows=1 width=4) (actual time=0.002..0.002 rows=0 loops=411631)
+                                            Index Cond: (id = mk.keyword_id)
+                                            Filter: (keyword = ANY ('{superhero,marvel-comics,based-on-comic,tv-special,fight,violence,magnet,web,claw,laser}'::text[]))
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..1.51 rows=36 width=12) (actual time=0.005..0.086 rows=96 loops=1423)
+                                      Index Cond: (movie_id = mk.movie_id)
+                          ->  Index Scan using title_pkey on title t  (cost=0.43..0.45 rows=1 width=25) (actual time=0.001..0.001 rows=0 loops=136158)
+                                Index Cond: (id = ci.movie_id)
+                                Filter: (production_year > 2000)
+                                Rows Removed by Filter: 1
+              ->  Index Scan using name_pkey on name n  (cost=0.43..0.46 rows=1 width=19) (actual time=0.003..0.003 rows=1 loops=58947)
+                    Index Cond: (id = ci.person_id)
+        ->  Index Scan using char_name_pkey on char_name chn  (cost=0.43..0.46 rows=1 width=20) (actual time=0.001..0.001 rows=0 loops=58947)
+              Index Cond: (id = ci.person_role_id)
+              Filter: ((name IS NOT NULL) AND ((name ~~ '%man%'::text) OR (name ~~ '%Man%'::text)))
+              Rows Removed by Filter: 0
+Planning time: 45.582 ms
+Execution time: 1904.654 ms

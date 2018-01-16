@@ -1,0 +1,67 @@
+Aggregate  (cost=9877.48..9877.49 rows=1 width=192) (actual time=19.731..19.731 rows=1 loops=1)
+  ->  Nested Loop  (cost=42.51..9877.46 rows=1 width=84) (actual time=1.449..19.720 rows=8 loops=1)
+        ->  Nested Loop  (cost=42.37..9877.28 rows=1 width=88) (actual time=1.402..19.693 rows=24 loops=1)
+              ->  Nested Loop  (cost=42.23..9876.35 rows=6 width=92) (actual time=1.399..19.668 rows=24 loops=1)
+                    ->  Nested Loop  (cost=41.81..9873.69 rows=6 width=77) (actual time=1.397..19.625 rows=24 loops=1)
+                          Join Filter: (t2.id = mc2.movie_id)
+                          ->  Nested Loop  (cost=41.38..9869.27 rows=6 width=85) (actual time=1.393..19.601 rows=6 loops=1)
+                                Join Filter: (mi_idx2.info_type_id = it2.id)
+                                Rows Removed by Join Filter: 627
+                                ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.011..0.013 rows=1 loops=1)
+                                      Filter: ((info)::text = 'rating'::text)
+                                      Rows Removed by Filter: 112
+                                ->  Nested Loop  (cost=41.38..9858.94 rows=633 width=89) (actual time=0.815..19.523 rows=633 loops=1)
+                                      Join Filter: (kt1.id = t1.kind_id)
+                                      Rows Removed by Join Filter: 60
+                                      ->  Seq Scan on kind_type kt1  (cost=0.00..1.09 rows=1 width=4) (actual time=0.002..0.004 rows=1 loops=1)
+                                            Filter: ((kind)::text = 'tv series'::text)
+                                            Rows Removed by Filter: 6
+                                      ->  Nested Loop  (cost=41.38..9849.19 rows=693 width=93) (actual time=0.812..19.398 rows=693 loops=1)
+                                            Join Filter: (ml.movie_id = t1.id)
+                                            ->  Nested Loop  (cost=40.95..9482.61 rows=693 width=84) (actual time=0.809..18.288 rows=693 loops=1)
+                                                  Join Filter: (ml.movie_id = mi_idx1.movie_id)
+                                                  ->  Nested Loop  (cost=40.53..9355.17 rows=238 width=70) (actual time=0.805..17.633 rows=238 loops=1)
+                                                        ->  Nested Loop  (cost=40.11..8637.28 rows=1610 width=55) (actual time=0.180..14.810 rows=1610 loops=1)
+                                                              ->  Nested Loop  (cost=39.68..7414.33 rows=308 width=47) (actual time=0.173..13.571 rows=308 loops=1)
+                                                                    Join Filter: (ml.linked_movie_id = t2.id)
+                                                                    ->  Nested Loop  (cost=39.25..5240.56 rows=2944 width=22) (actual time=0.071..7.533 rows=2944 loops=1)
+                                                                          ->  Nested Loop  (cost=38.82..470.30 rows=2315 width=8) (actual time=0.062..1.049 rows=2315 loops=1)
+                                                                                ->  Seq Scan on link_type lt  (cost=0.00..1.25 rows=2 width=4) (actual time=0.002..0.007 rows=2 loops=1)
+                                                                                      Filter: ((link)::text = ANY ('{sequel,follows,"followed by"}'::text[]))
+                                                                                      Rows Removed by Filter: 16
+                                                                                ->  Bitmap Heap Scan on movie_link ml  (cost=38.82..215.78 rows=1875 width=12) (actual time=0.054..0.341 rows=1158 loops=2)
+                                                                                      Recheck Cond: (link_type_id = lt.id)
+                                                                                      Heap Blocks: exact=191
+                                                                                      ->  Bitmap Index Scan on link_type_id_movie_link  (cost=0.00..38.35 rows=1875 width=0) (actual time=0.042..0.042 rows=1158 loops=2)
+                                                                                            Index Cond: (link_type_id = lt.id)
+                                                                          ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx2  (cost=0.43..2.05 rows=1 width=14) (actual time=0.002..0.002 rows=1 loops=2315)
+                                                                                Index Cond: (movie_id = ml.linked_movie_id)
+                                                                                Filter: (info < '3.0'::text)
+                                                                                Rows Removed by Filter: 1
+                                                                    ->  Index Scan using title_pkey on title t2  (cost=0.43..0.73 rows=1 width=25) (actual time=0.002..0.002 rows=0 loops=2944)
+                                                                          Index Cond: (id = mi_idx2.movie_id)
+                                                                          Filter: ((production_year >= 2005) AND (production_year <= 2008))
+                                                                          Rows Removed by Filter: 1
+                                                              ->  Index Scan using movie_id_movie_companies on movie_companies mc1  (cost=0.43..3.92 rows=5 width=8) (actual time=0.002..0.003 rows=5 loops=308)
+                                                                    Index Cond: (movie_id = ml.movie_id)
+                                                        ->  Index Scan using company_name_pkey on company_name cn1  (cost=0.42..0.45 rows=1 width=23) (actual time=0.002..0.002 rows=0 loops=1610)
+                                                              Index Cond: (id = mc1.company_id)
+                                                              Filter: ((country_code)::text = '[us]'::text)
+                                                              Rows Removed by Filter: 1
+                                                  ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx1  (cost=0.43..0.50 rows=3 width=14) (actual time=0.001..0.002 rows=3 loops=238)
+                                                        Index Cond: (movie_id = mc1.movie_id)
+                                            ->  Index Scan using title_pkey on title t1  (cost=0.43..0.52 rows=1 width=25) (actual time=0.001..0.001 rows=1 loops=693)
+                                                  Index Cond: (id = mc1.movie_id)
+                          ->  Index Scan using movie_id_movie_companies on movie_companies mc2  (cost=0.43..0.68 rows=5 width=8) (actual time=0.002..0.003 rows=4 loops=6)
+                                Index Cond: (movie_id = mi_idx2.movie_id)
+                    ->  Index Scan using company_name_pkey on company_name cn2  (cost=0.42..0.44 rows=1 width=23) (actual time=0.001..0.001 rows=1 loops=24)
+                          Index Cond: (id = mc2.company_id)
+              ->  Index Scan using kind_type_pkey on kind_type kt2  (cost=0.13..0.15 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=24)
+                    Index Cond: (id = t2.kind_id)
+                    Filter: ((kind)::text = 'tv series'::text)
+        ->  Index Scan using info_type_pkey on info_type it1  (cost=0.14..0.16 rows=1 width=4) (actual time=0.001..0.001 rows=0 loops=24)
+              Index Cond: (id = mi_idx1.info_type_id)
+              Filter: ((info)::text = 'rating'::text)
+              Rows Removed by Filter: 1
+Planning time: 60.765 ms
+Execution time: 19.834 ms

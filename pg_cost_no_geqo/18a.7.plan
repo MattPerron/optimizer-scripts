@@ -1,0 +1,26 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (mi.info_type_id = it1.id)
+              ->  Seq Scan on info_type it1
+                    Filter: ((info)::text = 'budget'::text)
+              ->  Nested Loop
+                    Join Filter: (mi_idx.movie_id = mi.movie_id)
+                    ->  Nested Loop
+                          Join Filter: (mi_idx.info_type_id = it2.id)
+                          ->  Seq Scan on info_type it2
+                                Filter: ((info)::text = 'votes'::text)
+                          ->  Nested Loop
+                                ->  Hash Join
+                                      Hash Cond: (ci.person_id = n.id)
+                                      ->  Seq Scan on cast_info ci
+                                            Filter: (note = ANY ('{(producer),"(executive producer)"}'::text[]))
+                                      ->  Hash
+                                            ->  Seq Scan on name n
+                                                  Filter: ((name ~~ '%Tim%'::text) AND ((gender)::text = 'm'::text))
+                                ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx
+                                      Index Cond: (movie_id = ci.movie_id)
+                    ->  Index Scan using movie_id_movie_info on movie_info mi
+                          Index Cond: (movie_id = ci.movie_id)
+        ->  Index Scan using title_pkey on title t
+              Index Cond: (id = mi.movie_id)
