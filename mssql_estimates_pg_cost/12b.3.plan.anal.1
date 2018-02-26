@@ -1,0 +1,40 @@
+Aggregate  (cost=92358.73..92358.74 rows=1 width=64) (actual time=360.263..360.263 rows=1 loops=1)
+  ->  Nested Loop  (cost=1.71..92358.72 rows=3 width=59) (actual time=249.951..360.249 rows=10 loops=1)
+        Join Filter: (mi.info_type_id = it1.id)
+        Rows Removed by Join Filter: 1200
+        ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.013..0.015 rows=1 loops=1)
+              Filter: ((info)::text = 'budget'::text)
+              Rows Removed by Filter: 112
+        ->  Nested Loop  (cost=1.71..92351.69 rows=369 width=63) (actual time=249.884..360.126 rows=1210 loops=1)
+              Join Filter: (t.id = mi.movie_id)
+              ->  Nested Loop  (cost=1.28..92330.29 rows=11 width=29) (actual time=249.872..359.556 rows=10 loops=1)
+                    ->  Nested Loop  (cost=0.86..92322.27 rows=18 width=33) (actual time=249.863..359.436 rows=33 loops=1)
+                          Join Filter: (mc.company_type_id = ct.id)
+                          Rows Removed by Join Filter: 5
+                          ->  Nested Loop  (cost=0.86..92310.26 rows=398 width=37) (actual time=249.842..359.402 rows=33 loops=1)
+                                Join Filter: (t.id = mc.movie_id)
+                                ->  Nested Loop  (cost=0.43..91713.37 rows=911 width=25) (actual time=249.830..359.366 rows=2 loops=1)
+                                      Join Filter: (mi_idx.info_type_id = it2.id)
+                                      Rows Removed by Join Filter: 2643
+                                      ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.009..0.009 rows=1 loops=1)
+                                            Filter: ((info)::text = 'bottom 10 rank'::text)
+                                            Rows Removed by Filter: 112
+                                      ->  Nested Loop  (cost=0.43..91654.00 rows=4556 width=29) (actual time=3.920..359.180 rows=2645 loops=1)
+                                            ->  Seq Scan on title t  (cost=0.00..80247.87 rows=1521 width=21) (actual time=0.108..351.979 rows=2536 loops=1)
+                                                  Filter: ((production_year > 2000) AND ((title ~~ 'Birdemic%'::text) OR (title ~~ '%Movie%'::text)))
+                                                  Rows Removed by Filter: 2525776
+                                            ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.43..7.47 rows=3 width=8) (actual time=0.002..0.002 rows=1 loops=2536)
+                                                  Index Cond: (movie_id = t.id)
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.59 rows=5 width=12) (actual time=0.008..0.012 rows=16 loops=2)
+                                      Index Cond: (movie_id = mi_idx.movie_id)
+                          ->  Materialize  (cost=0.00..1.07 rows=2 width=4) (actual time=0.000..0.000 rows=1 loops=33)
+                                ->  Seq Scan on company_type ct  (cost=0.00..1.06 rows=2 width=4) (actual time=0.007..0.008 rows=2 loops=1)
+                                      Filter: ((kind IS NOT NULL) AND (((kind)::text = 'production companies'::text) OR ((kind)::text = 'distributors'::text)))
+                    ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.45 rows=1 width=4) (actual time=0.003..0.003 rows=0 loops=33)
+                          Index Cond: (id = mc.company_id)
+                          Filter: ((country_code)::text = '[us]'::text)
+                          Rows Removed by Filter: 1
+              ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..1.45 rows=40 width=50) (actual time=0.004..0.031 rows=121 loops=10)
+                    Index Cond: (movie_id = mc.movie_id)
+Planning time: 3.427 ms
+Execution time: 360.324 ms

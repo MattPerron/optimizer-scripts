@@ -11,7 +11,7 @@ def main():
     use_seqscan = True
     index = 0
     directory = "/home/ubuntu/join-order-benchmark/"
-    output_dir = "no_base_pg_cost2"
+    output_dir = "mssql_estimates_pg_cost"
     with pg.connect('host=localhost user=ubuntu dbname=ubuntu') as conn, conn.cursor() as cur, open(os.path.join(output_dir, "aggregate_data.csv"), 'w', 1) as agg_data:
         agg_data.write("query_index, query_name, num_tables, perfect_estimates, new_plan, execution_time1, execution_time2\n")
         for fname_num in range(1, 34):

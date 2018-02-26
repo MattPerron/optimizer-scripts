@@ -1,0 +1,33 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Hash Join
+                    Hash Cond: (mc.company_type_id = ct.id)
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Nested Loop
+                                                  ->  Seq Scan on info_type it1
+                                                        Filter: ((info)::text = 'release dates'::text)
+                                                  ->  Bitmap Heap Scan on movie_info mi
+                                                        Recheck Cond: (info_type_id = it1.id)
+                                                        Filter: (note ~~ '%internet%'::text)
+                                                        ->  Bitmap Index Scan on info_type_id_movie_info
+                                                              Index Cond: (info_type_id = it1.id)
+                                            ->  Index Scan using movie_id_aka_title on aka_title at
+                                                  Index Cond: (movie_id = mi.movie_id)
+                                      ->  Index Scan using title_pkey on title t
+                                            Index Cond: (id = at.movie_id)
+                                            Filter: (production_year > 1990)
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                      Index Cond: (movie_id = t.id)
+                          ->  Index Scan using company_name_pkey on company_name cn
+                                Index Cond: (id = mc.company_id)
+                                Filter: ((country_code)::text = '[us]'::text)
+                    ->  Hash
+                          ->  Seq Scan on company_type ct
+              ->  Index Scan using movie_id_movie_keyword on movie_keyword mk
+                    Index Cond: (movie_id = t.id)
+        ->  Index Only Scan using keyword_pkey on keyword k
+              Index Cond: (id = mk.keyword_id)

@@ -1,0 +1,41 @@
+Aggregate  (cost=6881.44..6881.45 rows=1 width=64) (actual time=30.750..30.750 rows=1 loops=1)
+  ->  Nested Loop  (cost=2.57..6881.44 rows=1 width=59) (actual time=7.975..30.736 rows=37 loops=1)
+        ->  Nested Loop  (cost=2.15..6881.00 rows=1 width=63) (actual time=7.968..30.631 rows=37 loops=1)
+              Join Filter: (mi.info_type_id = it1.id)
+              ->  Nested Loop  (cost=2.15..6878.57 rows=1 width=67) (actual time=7.963..30.515 rows=37 loops=1)
+                    Join Filter: (t.id = mi.movie_id)
+                    ->  Nested Loop  (cost=1.71..6877.05 rows=1 width=37) (actual time=4.072..27.929 rows=292 loops=1)
+                          ->  Nested Loop  (cost=1.28..6875.12 rows=1 width=29) (actual time=4.066..27.749 rows=26 loops=1)
+                                ->  Nested Loop  (cost=0.85..6874.17 rows=1 width=8) (actual time=4.059..27.633 rows=27 loops=1)
+                                      Join Filter: (mc.company_type_id = ct.id)
+                                      ->  Nested Loop  (cost=0.85..6873.08 rows=1 width=12) (actual time=4.055..27.594 rows=27 loops=1)
+                                            ->  Nested Loop  (cost=0.43..6872.10 rows=1 width=8) (actual time=3.881..27.005 rows=278 loops=1)
+                                                  ->  Seq Scan on company_name cn  (cost=0.00..6519.95 rows=1 width=4) (actual time=3.865..25.868 rows=1 loops=1)
+                                                        Filter: (((country_code)::text = '[us]'::text) AND (name = 'YouTube'::text))
+                                                        Rows Removed by Filter: 234996
+                                                  ->  Index Scan using company_id_movie_companies on movie_companies mc  (cost=0.43..352.14 rows=1 width=12) (actual time=0.014..1.106 rows=278 loops=1)
+                                                        Index Cond: (company_id = cn.id)
+                                                        Filter: ((note ~~ '%(200%)%'::text) AND (note ~~ '%(worldwide)%'::text))
+                                                        Rows Removed by Filter: 1180
+                                            ->  Index Only Scan using movie_id_aka_title on aka_title at  (cost=0.42..0.95 rows=3 width=4) (actual time=0.002..0.002 rows=0 loops=278)
+                                                  Index Cond: (movie_id = mc.movie_id)
+                                                  Heap Fetches: 27
+                                      ->  Seq Scan on company_type ct  (cost=0.00..1.04 rows=4 width=4) (actual time=0.000..0.000 rows=1 loops=27)
+                                ->  Index Scan using title_pkey on title t  (cost=0.43..0.95 rows=1 width=21) (actual time=0.004..0.004 rows=1 loops=27)
+                                      Index Cond: (id = at.movie_id)
+                                      Filter: ((production_year >= 2005) AND (production_year <= 2010))
+                                      Rows Removed by Filter: 0
+                          ->  Index Scan using movie_id_movie_keyword on movie_keyword mk  (cost=0.43..1.46 rows=47 width=8) (actual time=0.004..0.005 rows=11 loops=26)
+                                Index Cond: (movie_id = t.id)
+                    ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..1.51 rows=1 width=50) (actual time=0.008..0.009 rows=0 loops=292)
+                          Index Cond: (movie_id = mk.movie_id)
+                          Filter: ((note ~~ '%internet%'::text) AND (info ~~ 'USA:% 200%'::text))
+                          Rows Removed by Filter: 29
+              ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=37)
+                    Filter: ((info)::text = 'release dates'::text)
+                    Rows Removed by Filter: 15
+        ->  Index Only Scan using keyword_pkey on keyword k  (cost=0.42..0.44 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=37)
+              Index Cond: (id = mk.keyword_id)
+              Heap Fetches: 37
+Planning time: 8.081 ms
+Execution time: 30.805 ms

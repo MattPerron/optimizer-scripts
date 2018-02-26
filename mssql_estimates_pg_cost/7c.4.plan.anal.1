@@ -1,0 +1,40 @@
+Aggregate  (cost=79984.74..79984.75 rows=1 width=64) (actual time=3092.373..3092.373 rows=1 loops=1)
+  ->  Nested Loop  (cost=2493.05..79984.74 rows=1 width=110) (actual time=12.279..2783.213 rows=68185 loops=1)
+        ->  Nested Loop  (cost=2492.62..79984.28 rows=1 width=118) (actual time=12.270..2562.098 rows=109842 loops=1)
+              ->  Nested Loop  (cost=2492.48..79983.79 rows=3 width=122) (actual time=12.267..2431.613 rows=127027 loops=1)
+                    ->  Nested Loop  (cost=2492.19..79492.95 rows=1433 width=114) (actual time=12.249..924.354 rows=1618304 loops=1)
+                          ->  Nested Loop  (cost=2491.63..64503.87 rows=896 width=122) (actual time=12.241..443.986 rows=12595 loops=1)
+                                ->  Nested Loop  (cost=2491.20..59943.88 rows=5308 width=103) (actual time=12.187..266.897 rows=72979 loops=1)
+                                      ->  Nested Loop  (cost=2490.77..55264.72 rows=4403 width=99) (actual time=12.173..88.345 rows=84183 loops=1)
+                                            ->  Seq Scan on info_type it  (cost=0.00..2.41 rows=1 width=4) (actual time=0.008..0.015 rows=1 loops=1)
+                                                  Filter: ((info)::text = 'mini biography'::text)
+                                                  Rows Removed by Filter: 112
+                                            ->  Bitmap Heap Scan on person_info pi  (cost=2490.77..55224.09 rows=3822 width=103) (actual time=12.163..80.390 rows=84183 loops=1)
+                                                  Recheck Cond: (info_type_id = it.id)
+                                                  Filter: (note IS NOT NULL)
+                                                  Rows Removed by Filter: 1
+                                                  Heap Blocks: exact=40387
+                                                  ->  Bitmap Index Scan on info_type_id_person_info  (cost=0.00..2489.82 rows=134585 width=0) (actual time=6.430..6.430 rows=84184 loops=1)
+                                                        Index Cond: (info_type_id = it.id)
+                                      ->  Index Scan using person_id_aka_name on aka_name an  (cost=0.42..1.04 rows=2 width=4) (actual time=0.002..0.002 rows=1 loops=84183)
+                                            Index Cond: (person_id = pi.person_id)
+                                            Filter: ((name IS NOT NULL) AND ((name ~~ '%a%'::text) OR (name ~~ 'A%'::text)))
+                                            Rows Removed by Filter: 0
+                                ->  Index Scan using name_pkey on name n  (cost=0.43..0.86 rows=1 width=19) (actual time=0.002..0.002 rows=0 loops=72979)
+                                      Index Cond: (id = an.person_id)
+                                      Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'A%'::text))))
+                                      Rows Removed by Filter: 1
+                          ->  Index Scan using person_id_cast_info on cast_info ci  (cost=0.56..11.58 rows=515 width=8) (actual time=0.003..0.022 rows=128 loops=12595)
+                                Index Cond: (person_id = n.id)
+                    ->  Index Scan using linked_movie_id_movie_link on movie_link ml  (cost=0.29..0.32 rows=2 width=8) (actual time=0.001..0.001 rows=0 loops=1618304)
+                          Index Cond: (linked_movie_id = ci.movie_id)
+              ->  Index Scan using link_type_pkey on link_type lt  (cost=0.14..0.16 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=127027)
+                    Index Cond: (id = ml.link_type_id)
+                    Filter: ((link)::text = ANY ('{references,"referenced in",features,"featured in"}'::text[]))
+                    Rows Removed by Filter: 0
+        ->  Index Scan using title_pkey on title t  (cost=0.43..0.46 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=109842)
+              Index Cond: (id = ci.movie_id)
+              Filter: ((production_year >= 1980) AND (production_year <= 2010))
+              Rows Removed by Filter: 0
+Planning time: 3.530 ms
+Execution time: 3092.439 ms

@@ -1,0 +1,57 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (ct.id = mc.company_type_id)
+        ->  Nested Loop
+              ->  Nested Loop
+                    Join Filter: (t.id = mc.movie_id)
+                    ->  Nested Loop
+                          Join Filter: (it1.id = mi.info_type_id)
+                          ->  Seq Scan on info_type it1
+                                Filter: ((info)::text = 'countries'::text)
+                          ->  Nested Loop
+                                Join Filter: (t.id = mi.movie_id)
+                                ->  Nested Loop
+                                      Join Filter: (kt.id = t.kind_id)
+                                      ->  Nested Loop
+                                            ->  Nested Loop
+                                                  Join Filter: (cct2.id = cc.status_id)
+                                                  ->  Nested Loop
+                                                        Join Filter: (cct1.id = cc.subject_id)
+                                                        ->  Seq Scan on comp_cast_type cct1
+                                                              Filter: ((kind)::text = 'crew'::text)
+                                                        ->  Nested Loop
+                                                              ->  Nested Loop
+                                                                    Join Filter: (it2.id = mi_idx.info_type_id)
+                                                                    ->  Seq Scan on info_type it2
+                                                                          Filter: ((info)::text = 'rating'::text)
+                                                                    ->  Nested Loop
+                                                                          ->  Nested Loop
+                                                                                ->  Seq Scan on keyword k
+                                                                                      Filter: (keyword = ANY ('{murder,murder-in-title,blood,violence}'::text[]))
+                                                                                ->  Bitmap Heap Scan on movie_keyword mk
+                                                                                      Recheck Cond: (keyword_id = k.id)
+                                                                                      ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                                                            Index Cond: (keyword_id = k.id)
+                                                                          ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx
+                                                                                Index Cond: (movie_id = mk.movie_id)
+                                                                                Filter: (info > '6.5'::text)
+                                                              ->  Index Scan using movie_id_complete_cast on complete_cast cc
+                                                                    Index Cond: (movie_id = mk.movie_id)
+                                                  ->  Materialize
+                                                        ->  Seq Scan on comp_cast_type cct2
+                                                              Filter: ((kind)::text <> 'complete+verified'::text)
+                                            ->  Index Scan using title_pkey on title t
+                                                  Index Cond: (id = mk.movie_id)
+                                                  Filter: (production_year > 2005)
+                                      ->  Seq Scan on kind_type kt
+                                            Filter: ((kind)::text = ANY ('{movie,episode}'::text[]))
+                                ->  Index Scan using movie_id_movie_info on movie_info mi
+                                      Index Cond: (movie_id = mk.movie_id)
+                                      Filter: (info = ANY ('{Sweden,Germany,Swedish,German}'::text[]))
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                          Index Cond: (movie_id = mk.movie_id)
+                          Filter: ((note !~~ '%(USA)%'::text) AND (note ~~ '%(200%)%'::text))
+              ->  Index Scan using company_name_pkey on company_name cn
+                    Index Cond: (id = mc.company_id)
+                    Filter: ((country_code)::text <> '[us]'::text)
+        ->  Seq Scan on company_type ct
