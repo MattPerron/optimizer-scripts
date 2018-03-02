@@ -1,0 +1,39 @@
+Aggregate  (cost=422380.42..422380.43 rows=1 width=64) (actual time=1383.709..1383.709 rows=1 loops=1)
+  ->  Nested Loop  (cost=2.83..422377.03 rows=677 width=59) (actual time=352.181..1382.953 rows=2271 loops=1)
+        Join Filter: (t.id = at.movie_id)
+        ->  Nested Loop  (cost=2.40..422237.46 rows=269 width=75) (actual time=351.154..1371.708 rows=7964 loops=1)
+              ->  Nested Loop  (cost=1.98..422119.46 rows=269 width=79) (actual time=351.144..1355.332 rows=7964 loops=1)
+                    ->  Nested Loop  (cost=1.55..422082.62 rows=21 width=71) (actual time=351.136..1346.721 rows=2647 loops=1)
+                          ->  Nested Loop  (cost=1.42..422079.55 rows=21 width=75) (actual time=351.130..1343.827 rows=2647 loops=1)
+                                ->  Nested Loop  (cost=1.00..422053.26 rows=59 width=79) (actual time=351.121..1335.294 rows=2884 loops=1)
+                                      ->  Nested Loop  (cost=0.57..422046.37 rows=11 width=67) (actual time=351.112..1328.229 rows=1782 loops=1)
+                                            ->  Nested Loop  (cost=0.14..421920.00 rows=16 width=46) (actual time=351.094..1321.756 rows=1783 loops=1)
+                                                  ->  Seq Scan on movie_info mi  (cost=0.00..421618.10 rows=1783 width=50) (actual time=351.079..1319.587 rows=1783 loops=1)
+                                                        Filter: ((info IS NOT NULL) AND (note ~~ '%internet%'::text) AND ((info ~~ 'USA:% 199%'::text) OR (info ~~ 'USA:% 200%'::text)))
+                                                        Rows Removed by Filter: 14833937
+                                                  ->  Index Scan using info_type_pkey on info_type it1  (cost=0.14..0.17 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=1783)
+                                                        Index Cond: (id = mi.info_type_id)
+                                                        Filter: ((info)::text = 'release dates'::text)
+                                            ->  Index Scan using title_pkey on title t  (cost=0.43..7.90 rows=1 width=21) (actual time=0.003..0.003 rows=1 loops=1783)
+                                                  Index Cond: (id = mi.movie_id)
+                                                  Filter: (production_year > 1990)
+                                                  Rows Removed by Filter: 0
+                                      ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.58 rows=5 width=12) (actual time=0.003..0.003 rows=2 loops=1782)
+                                            Index Cond: (movie_id = t.id)
+                                ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.45 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=2884)
+                                      Index Cond: (id = mc.company_id)
+                                      Filter: ((country_code)::text = '[us]'::text)
+                                      Rows Removed by Filter: 0
+                          ->  Index Only Scan using company_type_pkey on company_type ct  (cost=0.13..0.15 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=2647)
+                                Index Cond: (id = mc.company_type_id)
+                                Heap Fetches: 2647
+                    ->  Index Scan using movie_id_movie_keyword on movie_keyword mk  (cost=0.43..1.30 rows=45 width=8) (actual time=0.002..0.003 rows=3 loops=2647)
+                          Index Cond: (movie_id = t.id)
+              ->  Index Only Scan using keyword_pkey on keyword k  (cost=0.42..0.44 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=7964)
+                    Index Cond: (id = mk.keyword_id)
+                    Heap Fetches: 7964
+        ->  Index Only Scan using movie_id_aka_title on aka_title at  (cost=0.42..0.48 rows=3 width=4) (actual time=0.001..0.001 rows=0 loops=7964)
+              Index Cond: (movie_id = mk.movie_id)
+              Heap Fetches: 2271
+Planning time: 7.572 ms
+Execution time: 1383.796 ms

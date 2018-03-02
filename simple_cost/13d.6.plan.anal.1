@@ -1,0 +1,64 @@
+Aggregate  (cost=5891025.00..5891026.00 rows=1 width=96) (actual time=4498.198..4498.198 rows=1 loops=1)
+  ->  Hash Join  (cost=5212447.00..5891025.00 rows=4013 width=41) (actual time=3704.352..4327.001 rows=670390 loops=1)
+        Hash Cond: (mi.movie_id = t.id)
+        ->  Nested Loop  (cost=0.00..635930.00 rows=3036719 width=4) (actual time=0.024..787.350 rows=3036719 loops=1)
+              ->  Seq Scan on info_type it2  (cost=0.00..113.00 rows=1 width=4) (actual time=0.009..0.017 rows=1 loops=1)
+                    Filter: ((info)::text = 'release dates'::text)
+                    Rows Removed by Filter: 112
+              ->  Index Scan using info_type_id_movie_info on movie_info mi  (cost=0.00..423878.00 rows=211939 width=8) (actual time=0.014..496.094 rows=3036719 loops=1)
+                    Index Cond: (info_type_id = it2.id)
+        ->  Hash  (cost=5176939.00..5176939.00 rows=35508 width=53) (actual time=3003.751..3003.751 rows=87293 loops=1)
+              Buckets: 131072 (originally 65536)  Batches: 1 (originally 1)  Memory Usage: 8689kB
+              ->  Merge Join  (cost=5067685.00..5176939.00 rows=35508 width=53) (actual time=2873.906..2977.875 rows=87293 loops=1)
+                    Merge Cond: (mc.company_id = cn.id)
+                    ->  Sort  (cost=4832688.00..4832688.00 rows=302610 width=38) (actual time=2821.989..2861.182 rows=302610 loops=1)
+                          Sort Key: mc.company_id
+                          Sort Method: quicksort  Memory: 37984kB
+                          ->  Merge Join  (cost=4639417.00..4832688.00 rows=302610 width=38) (actual time=2677.819..2741.078 rows=302610 loops=1)
+                                Merge Cond: (mc.company_type_id = ct.id)
+                                ->  Sort  (cost=4639413.00..4639413.00 rows=773084 width=42) (actual time=2623.764..2660.248 rows=773084 loops=1)
+                                      Sort Key: mc.company_type_id
+                                      Sort Method: quicksort  Memory: 92887kB
+                                      ->  Merge Join  (cost=4422824.00..4639413.00 rows=773084 width=42) (actual time=2184.819..2470.053 rows=773084 loops=1)
+                                            Merge Cond: (t.id = mc.movie_id)
+                                            ->  Sort  (cost=1813695.00..1813695.00 rows=209880 width=30) (actual time=1239.709..1252.101 rows=209878 loops=1)
+                                                  Sort Key: miidx.movie_id
+                                                  Sort Method: quicksort  Memory: 23056kB
+                                                  ->  Merge Join  (cost=1747991.00..1813695.00 rows=209880 width=30) (actual time=1146.022..1186.506 rows=209880 loops=1)
+                                                        Merge Cond: (t.kind_id = kt.id)
+                                                        ->  Sort  (cost=1747984.00..1747984.00 rows=459925 width=34) (actual time=1145.996..1156.232 rows=209881 loops=1)
+                                                              Sort Key: t.kind_id
+                                                              Sort Method: quicksort  Memory: 50930kB
+                                                              ->  Nested Loop  (cost=0.00..1747984.00 rows=459925 width=34) (actual time=0.026..1025.065 rows=459925 loops=1)
+                                                                    ->  Nested Loop  (cost=0.00..828134.00 rows=459925 width=9) (actual time=0.020..164.558 rows=459925 loops=1)
+                                                                          ->  Seq Scan on info_type it  (cost=0.00..113.00 rows=1 width=4) (actual time=0.008..0.012 rows=1 loops=1)
+                                                                                Filter: ((info)::text = 'rating'::text)
+                                                                                Rows Removed by Filter: 112
+                                                                          ->  Index Scan using info_type_id_movie_info_idx on movie_info_idx miidx  (cost=0.00..552014.00 rows=276007 width=13) (actual time=0.012..99.871 rows=459925 loops=1)
+                                                                                Index Cond: (info_type_id = it.id)
+                                                                    ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=25) (actual time=0.002..0.002 rows=1 loops=459925)
+                                                                          Index Cond: (id = miidx.movie_id)
+                                                        ->  Sort  (cost=7.00..7.00 rows=1 width=4) (actual time=0.022..0.022 rows=1 loops=1)
+                                                              Sort Key: kt.id
+                                                              Sort Method: quicksort  Memory: 25kB
+                                                              ->  Seq Scan on kind_type kt  (cost=0.00..7.00 rows=1 width=4) (actual time=0.009..0.011 rows=1 loops=1)
+                                                                    Filter: ((kind)::text = 'movie'::text)
+                                                                    Rows Removed by Filter: 6
+                                            ->  Sort  (cost=2609129.00..2609129.00 rows=2609129 width=12) (actual time=852.585..970.305 rows=2609129 loops=1)
+                                                  Sort Key: mc.movie_id
+                                                  Sort Method: quicksort  Memory: 220607kB
+                                                  ->  Seq Scan on movie_companies mc  (cost=0.00..2609129.00 rows=2609129 width=12) (actual time=0.012..298.953 rows=2609129 loops=1)
+                                ->  Sort  (cost=4.00..4.00 rows=1 width=4) (actual time=0.026..0.026 rows=1 loops=1)
+                                      Sort Key: ct.id
+                                      Sort Method: quicksort  Memory: 25kB
+                                      ->  Seq Scan on company_type ct  (cost=0.00..4.00 rows=1 width=4) (actual time=0.014..0.015 rows=1 loops=1)
+                                            Filter: ((kind)::text = 'production companies'::text)
+                                            Rows Removed by Filter: 3
+                    ->  Sort  (cost=234997.00..234997.00 rows=84843 width=23) (actual time=51.911..62.732 rows=84843 loops=1)
+                          Sort Key: cn.id
+                          Sort Method: quicksort  Memory: 9413kB
+                          ->  Seq Scan on company_name cn  (cost=0.00..234997.00 rows=84843 width=23) (actual time=0.014..30.701 rows=84843 loops=1)
+                                Filter: ((country_code)::text = '[us]'::text)
+                                Rows Removed by Filter: 150154
+Planning time: 4.616 ms
+Execution time: 4499.989 ms

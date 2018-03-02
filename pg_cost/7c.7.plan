@@ -1,0 +1,33 @@
+Aggregate
+  ->  Hash Join
+        Hash Cond: (ci.person_id = n.id)
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Hash Join
+                          Hash Cond: (ml.link_type_id = lt.id)
+                          ->  Seq Scan on movie_link ml
+                          ->  Hash
+                                ->  Seq Scan on link_type lt
+                                      Filter: ((link)::text = ANY ('{references,"referenced in",features,"featured in"}'::text[]))
+                    ->  Index Scan using title_pkey on title t
+                          Index Cond: (id = ml.linked_movie_id)
+                          Filter: ((production_year >= 1980) AND (production_year <= 2010))
+              ->  Index Scan using movie_id_cast_info on cast_info ci
+                    Index Cond: (movie_id = t.id)
+        ->  Hash
+              ->  Hash Join
+                    Hash Cond: (pi.info_type_id = it.id)
+                    ->  Nested Loop
+                          ->  Hash Join
+                                Hash Cond: (pi.person_id = an.person_id)
+                                ->  Seq Scan on person_info pi
+                                      Filter: (note IS NOT NULL)
+                                ->  Hash
+                                      ->  Seq Scan on aka_name an
+                                            Filter: ((name IS NOT NULL) AND ((name ~~ '%a%'::text) OR (name ~~ 'A%'::text)))
+                          ->  Index Scan using name_pkey on name n
+                                Index Cond: (id = an.person_id)
+                                Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'A%'::text))))
+                    ->  Hash
+                          ->  Seq Scan on info_type it
+                                Filter: ((info)::text = 'mini biography'::text)

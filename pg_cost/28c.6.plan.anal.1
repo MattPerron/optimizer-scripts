@@ -1,0 +1,78 @@
+Aggregate  (cost=95896.27..95896.28 rows=1 width=96) (actual time=1175.679..1175.680 rows=1 loops=1)
+  ->  Nested Loop  (cost=3780.24..95896.27 rows=1 width=41) (actual time=82.623..1172.519 rows=8373 loops=1)
+        ->  Nested Loop  (cost=3780.11..95896.10 rows=1 width=45) (actual time=82.615..1163.773 rows=8668 loops=1)
+              ->  Nested Loop  (cost=3779.69..95895.61 rows=1 width=30) (actual time=82.605..1140.804 rows=9128 loops=1)
+                    ->  Nested Loop  (cost=3779.56..95895.46 rows=1 width=34) (actual time=82.598..1131.175 rows=9128 loops=1)
+                          Join Filter: (t.id = mc.movie_id)
+                          ->  Nested Loop  (cost=3779.13..95894.88 rows=1 width=46) (actual time=70.422..1119.349 rows=871 loops=1)
+                                ->  Nested Loop  (cost=3778.71..95881.56 rows=30 width=50) (actual time=40.632..880.258 rows=112766 loops=1)
+                                      ->  Hash Join  (cost=3778.28..95850.69 rows=17 width=42) (actual time=40.418..833.486 rows=3676 loops=1)
+                                            Hash Cond: (mi.info_type_id = it1.id)
+                                            ->  Nested Loop  (cost=3775.85..95824.80 rows=1871 width=46) (actual time=40.393..832.440 rows=4207 loops=1)
+                                                  Join Filter: (t.id = mi.movie_id)
+                                                  ->  Nested Loop  (cost=3775.42..80476.46 rows=6606 width=38) (actual time=40.366..709.120 rows=6606 loops=1)
+                                                        ->  Hash Join  (cost=3774.99..55112.52 rows=43896 width=13) (actual time=39.883..591.701 rows=43896 loops=1)
+                                                              Hash Cond: (cc.subject_id = cct1.id)
+                                                              ->  Hash Join  (cost=3773.92..54375.14 rows=70757 width=17) (actual time=39.875..580.484 rows=70757 loops=1)
+                                                                    Hash Cond: (cc.status_id = cct2.id)
+                                                                    ->  Hash Join  (cost=3772.86..53394.53 rows=94130 width=21) (actual time=39.868..564.419 rows=94130 loops=1)
+                                                                          Hash Cond: (mi_idx.movie_id = cc.movie_id)
+                                                                          ->  Hash Join  (cost=2.43..42044.72 rows=454230 width=9) (actual time=0.021..411.487 rows=454230 loops=1)
+                                                                                Hash Cond: (mi_idx.info_type_id = it2.id)
+                                                                                ->  Seq Scan on movie_info_idx mi_idx  (cost=0.00..25185.44 rows=1343555 width=13) (actual time=0.007..264.820 rows=1343555 loops=1)
+                                                                                      Filter: (info < '8.5'::text)
+                                                                                      Rows Removed by Filter: 36480
+                                                                                ->  Hash  (cost=2.41..2.41 rows=1 width=4) (actual time=0.010..0.010 rows=1 loops=1)
+                                                                                      Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                                                      ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.008..0.009 rows=1 loops=1)
+                                                                                            Filter: ((info)::text = 'rating'::text)
+                                                                                            Rows Removed by Filter: 112
+                                                                          ->  Hash  (cost=2081.86..2081.86 rows=135086 width=12) (actual time=39.515..39.515 rows=135086 loops=1)
+                                                                                Buckets: 262144  Batches: 1  Memory Usage: 7853kB
+                                                                                ->  Seq Scan on complete_cast cc  (cost=0.00..2081.86 rows=135086 width=12) (actual time=0.006..16.647 rows=135086 loops=1)
+                                                                    ->  Hash  (cost=1.05..1.05 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=1)
+                                                                          Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                                          ->  Seq Scan on comp_cast_type cct2  (cost=0.00..1.05 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=1)
+                                                                                Filter: ((kind)::text = 'complete'::text)
+                                                                                Rows Removed by Filter: 3
+                                                              ->  Hash  (cost=1.05..1.05 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+                                                                    Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                                    ->  Seq Scan on comp_cast_type cct1  (cost=0.00..1.05 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=1)
+                                                                          Filter: ((kind)::text = 'cast'::text)
+                                                                          Rows Removed by Filter: 3
+                                                        ->  Index Scan using title_pkey on title t  (cost=0.43..0.58 rows=1 width=25) (actual time=0.002..0.002 rows=0 loops=43896)
+                                                              Index Cond: (id = mi_idx.movie_id)
+                                                              Filter: (production_year > 2005)
+                                                              Rows Removed by Filter: 1
+                                                  ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..2.30 rows=2 width=8) (actual time=0.017..0.018 rows=1 loops=6606)
+                                                        Index Cond: (movie_id = mi_idx.movie_id)
+                                                        Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Danish,Norwegian,German,USA,American}'::text[]))
+                                                        Rows Removed by Filter: 30
+                                            ->  Hash  (cost=2.41..2.41 rows=1 width=4) (actual time=0.019..0.019 rows=1 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                  ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.010..0.017 rows=1 loops=1)
+                                                        Filter: ((info)::text = 'countries'::text)
+                                                        Rows Removed by Filter: 112
+                                      ->  Index Scan using movie_id_movie_keyword on movie_keyword mk  (cost=0.43..1.37 rows=45 width=8) (actual time=0.003..0.008 rows=31 loops=3676)
+                                            Index Cond: (movie_id = t.id)
+                                ->  Index Scan using keyword_pkey on keyword k  (cost=0.42..0.44 rows=1 width=4) (actual time=0.002..0.002 rows=0 loops=112766)
+                                      Index Cond: (id = mk.keyword_id)
+                                      Filter: (keyword = ANY ('{murder,murder-in-title,blood,violence}'::text[]))
+                                      Rows Removed by Filter: 1
+                          ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.57 rows=1 width=12) (actual time=0.005..0.012 rows=10 loops=871)
+                                Index Cond: (movie_id = mk.movie_id)
+                                Filter: ((note !~~ '%(USA)%'::text) AND (note ~~ '%(200%)%'::text))
+                                Rows Removed by Filter: 12
+                    ->  Index Only Scan using company_type_pkey on company_type ct  (cost=0.13..0.15 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=9128)
+                          Index Cond: (id = mc.company_type_id)
+                          Heap Fetches: 9128
+              ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.49 rows=1 width=23) (actual time=0.002..0.002 rows=1 loops=9128)
+                    Index Cond: (id = mc.company_id)
+                    Filter: ((country_code)::text <> '[us]'::text)
+                    Rows Removed by Filter: 0
+        ->  Index Scan using kind_type_pkey on kind_type kt  (cost=0.13..0.15 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=8668)
+              Index Cond: (id = t.kind_id)
+              Filter: ((kind)::text = ANY ('{movie,episode}'::text[]))
+              Rows Removed by Filter: 0
+Planning time: 55.760 ms
+Execution time: 1175.813 ms

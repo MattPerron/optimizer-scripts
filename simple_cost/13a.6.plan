@@ -1,0 +1,51 @@
+Aggregate
+  ->  Merge Join
+        Merge Cond: (mi.info_type_id = it2.id)
+        ->  Sort
+              Sort Key: mi.info_type_id
+              ->  Nested Loop
+                    ->  Merge Join
+                          Merge Cond: (miidx.info_type_id = it.id)
+                          ->  Sort
+                                Sort Key: miidx.info_type_id
+                                ->  Nested Loop
+                                      ->  Merge Join
+                                            Merge Cond: (t.kind_id = kt.id)
+                                            ->  Sort
+                                                  Sort Key: t.kind_id
+                                                  ->  Nested Loop
+                                                        ->  Merge Join
+                                                              Merge Cond: (mc.company_type_id = ct.id)
+                                                              ->  Sort
+                                                                    Sort Key: mc.company_type_id
+                                                                    ->  Merge Join
+                                                                          Merge Cond: (cn.id = mc.company_id)
+                                                                          ->  Sort
+                                                                                Sort Key: cn.id
+                                                                                ->  Seq Scan on company_name cn
+                                                                                      Filter: ((country_code)::text = '[de]'::text)
+                                                                          ->  Sort
+                                                                                Sort Key: mc.company_id
+                                                                                ->  Seq Scan on movie_companies mc
+                                                              ->  Sort
+                                                                    Sort Key: ct.id
+                                                                    ->  Seq Scan on company_type ct
+                                                                          Filter: ((kind)::text = 'production companies'::text)
+                                                        ->  Index Scan using title_pkey on title t
+                                                              Index Cond: (id = mc.movie_id)
+                                            ->  Sort
+                                                  Sort Key: kt.id
+                                                  ->  Seq Scan on kind_type kt
+                                                        Filter: ((kind)::text = 'movie'::text)
+                                      ->  Index Scan using movie_id_movie_info_idx on movie_info_idx miidx
+                                            Index Cond: (movie_id = t.id)
+                          ->  Sort
+                                Sort Key: it.id
+                                ->  Seq Scan on info_type it
+                                      Filter: ((info)::text = 'rating'::text)
+                    ->  Index Scan using movie_id_movie_info on movie_info mi
+                          Index Cond: (movie_id = t.id)
+        ->  Sort
+              Sort Key: it2.id
+              ->  Seq Scan on info_type it2
+                    Filter: ((info)::text = 'release dates'::text)

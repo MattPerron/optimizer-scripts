@@ -1,0 +1,27 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          Join Filter: (t.id = ci.movie_id)
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Seq Scan on title t
+                                            Filter: ((production_year >= 2006) AND (production_year <= 2007) AND ((title ~~ 'One Piece%'::text) OR (title ~~ 'Dragon Ball Z%'::text)))
+                                      ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                            Index Cond: (movie_id = t.id)
+                                            Filter: ((note ~~ '%(Japan)%'::text) AND (note !~~ '%(USA)%'::text) AND ((note ~~ '%(2006)%'::text) OR (note ~~ '%(2007)%'::text)))
+                                ->  Index Scan using company_name_pkey on company_name cn
+                                      Index Cond: (id = mc.company_id)
+                                      Filter: ((country_code)::text = '[jp]'::text)
+                          ->  Index Scan using movie_id_cast_info on cast_info ci
+                                Index Cond: (movie_id = mc.movie_id)
+                                Filter: (note = '(voice: English version)'::text)
+                    ->  Index Scan using person_id_aka_name on aka_name an
+                          Index Cond: (person_id = ci.person_id)
+              ->  Index Scan using name_pkey on name n
+                    Index Cond: (id = an.person_id)
+                    Filter: ((name ~~ '%Yo%'::text) AND (name !~~ '%Yu%'::text))
+        ->  Index Scan using role_type_pkey on role_type rt
+              Index Cond: (id = ci.role_id)
+              Filter: ((role)::text = 'actress'::text)

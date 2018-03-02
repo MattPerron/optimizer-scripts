@@ -1,0 +1,36 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (t.id = mk.movie_id)
+              ->  Hash Join
+                    Hash Cond: (mi.info_type_id = it1.id)
+                    ->  Nested Loop
+                          Join Filter: (t.id = mi.movie_id)
+                          ->  Hash Join
+                                Hash Cond: (mi_idx.info_type_id = it2.id)
+                                ->  Hash Join
+                                      Hash Cond: (mi_idx.movie_id = t.id)
+                                      ->  Seq Scan on movie_info_idx mi_idx
+                                            Filter: (info < '8.5'::text)
+                                      ->  Hash
+                                            ->  Hash Join
+                                                  Hash Cond: (t.kind_id = kt.id)
+                                                  ->  Seq Scan on title t
+                                                        Filter: (production_year > 2010)
+                                                  ->  Hash
+                                                        ->  Seq Scan on kind_type kt
+                                                              Filter: ((kind)::text = 'movie'::text)
+                                ->  Hash
+                                      ->  Seq Scan on info_type it2
+                                            Filter: ((info)::text = 'rating'::text)
+                          ->  Index Scan using movie_id_movie_info on movie_info mi
+                                Index Cond: (movie_id = mi_idx.movie_id)
+                                Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German,USA,American}'::text[]))
+                    ->  Hash
+                          ->  Seq Scan on info_type it1
+                                Filter: ((info)::text = 'countries'::text)
+              ->  Index Scan using movie_id_movie_keyword on movie_keyword mk
+                    Index Cond: (movie_id = mi_idx.movie_id)
+        ->  Index Scan using keyword_pkey on keyword k
+              Index Cond: (id = mk.keyword_id)
+              Filter: (keyword = ANY ('{murder,murder-in-title,blood,violence}'::text[]))

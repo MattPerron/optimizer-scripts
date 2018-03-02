@@ -1,0 +1,37 @@
+Aggregate  (cost=129929.88..129929.89 rows=1 width=64) (actual time=1961.040..1961.040 rows=1 loops=1)
+  ->  Nested Loop  (cost=2628.84..129924.74 rows=1029 width=33) (actual time=8.920..1892.416 rows=319932 loops=1)
+        Join Filter: (n.id = an.person_id)
+        ->  Nested Loop  (cost=2628.41..129723.31 rows=414 width=25) (actual time=8.907..1385.240 rows=221609 loops=1)
+              ->  Nested Loop  (cost=2627.98..129534.99 rows=414 width=21) (actual time=8.892..909.947 rows=221609 loops=1)
+                    Join Filter: (t.id = ci.movie_id)
+                    ->  Nested Loop  (cost=2627.42..129488.04 rows=24 width=29) (actual time=8.879..740.743 rows=8538 loops=1)
+                          ->  Nested Loop  (cost=2627.00..129458.18 rows=67 width=33) (actual time=8.430..717.204 rows=11406 loops=1)
+                                Join Filter: (t.id = mc.movie_id)
+                                ->  Nested Loop  (cost=2626.57..129450.34 rows=13 width=25) (actual time=8.334..699.527 rows=6926 loops=1)
+                                      ->  Hash Join  (cost=2626.14..129433.75 rows=34 width=4) (actual time=8.314..611.423 rows=41840 loops=1)
+                                            Hash Cond: (mk.keyword_id = k.id)
+                                            ->  Seq Scan on movie_keyword mk  (cost=0.00..69693.30 rows=4523930 width=8) (actual time=0.007..282.969 rows=4523930 loops=1)
+                                            ->  Hash  (cost=2626.12..2626.12 rows=1 width=4) (actual time=8.283..8.283 rows=1 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                  ->  Seq Scan on keyword k  (cost=0.00..2626.12 rows=1 width=4) (actual time=0.366..8.277 rows=1 loops=1)
+                                                        Filter: (keyword = 'character-name-in-title'::text)
+                                                        Rows Removed by Filter: 134169
+                                      ->  Index Scan using title_pkey on title t  (cost=0.43..0.49 rows=1 width=21) (actual time=0.002..0.002 rows=0 loops=41840)
+                                            Index Cond: (id = mk.movie_id)
+                                            Filter: (episode_nr < 100)
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.54 rows=5 width=8) (actual time=0.002..0.002 rows=2 loops=6926)
+                                      Index Cond: (movie_id = mk.movie_id)
+                          ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.45 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=11406)
+                                Index Cond: (id = mc.company_id)
+                                Filter: ((country_code)::text = '[us]'::text)
+                                Rows Removed by Filter: 0
+                    ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..1.51 rows=36 width=8) (actual time=0.003..0.016 rows=26 loops=8538)
+                          Index Cond: (movie_id = mk.movie_id)
+              ->  Index Only Scan using name_pkey on name n  (cost=0.43..0.45 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=221609)
+                    Index Cond: (id = ci.person_id)
+                    Heap Fetches: 221609
+        ->  Index Scan using person_id_aka_name on aka_name an  (cost=0.42..0.46 rows=2 width=20) (actual time=0.002..0.002 rows=1 loops=221609)
+              Index Cond: (person_id = ci.person_id)
+Planning time: 3.335 ms
+Execution time: 1961.103 ms

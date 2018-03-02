@@ -1,0 +1,53 @@
+Aggregate  (cost=21554.00..21555.00 rows=1 width=96) (actual time=10.102..10.102 rows=1 loops=1)
+  ->  Nested Loop  (cost=0.00..21554.00 rows=1 width=48) (actual time=1.714..10.021 rows=247 loops=1)
+        ->  Nested Loop  (cost=0.00..21550.00 rows=1 width=52) (actual time=1.712..9.794 rows=247 loops=1)
+              ->  Nested Loop  (cost=0.00..20916.00 rows=316 width=56) (actual time=1.701..6.980 rows=1919 loops=1)
+                    ->  Nested Loop  (cost=0.00..19971.00 rows=7 width=72) (actual time=1.697..6.148 rows=247 loops=1)
+                          ->  Nested Loop  (cost=0.00..18441.00 rows=18 width=68) (actual time=1.689..5.525 rows=95 loops=1)
+                                ->  Nested Loop  (cost=0.00..18283.00 rows=70 width=72) (actual time=1.687..5.373 rows=152 loops=1)
+                                      ->  Nested Loop  (cost=0.00..17599.00 rows=342 width=57) (actual time=1.683..4.766 rows=342 loops=1)
+                                            ->  Nested Loop  (cost=0.00..16858.00 rows=57 width=45) (actual time=1.679..4.544 rows=57 loops=1)
+                                                  ->  Nested Loop  (cost=0.00..16744.00 rows=57 width=49) (actual time=1.676..4.484 rows=57 loops=1)
+                                                        ->  Nested Loop  (cost=0.00..15898.00 rows=141 width=37) (actual time=0.338..4.278 rows=141 loops=1)
+                                                              ->  Nested Loop  (cost=0.00..11268.00 rows=2315 width=16) (actual time=0.014..0.682 rows=2315 loops=1)
+                                                                    ->  Seq Scan on link_type lt  (cost=0.00..18.00 rows=2 width=16) (actual time=0.004..0.008 rows=2 loops=1)
+                                                                          Filter: ((link)::text ~~ '%follow%'::text)
+                                                                          Rows Removed by Filter: 16
+                                                                    ->  Index Scan using link_type_id_movie_link on movie_link ml  (cost=0.00..3750.00 rows=1875 width=8) (actual time=0.007..0.209 rows=1158 loops=2)
+                                                                          Index Cond: (link_type_id = lt.id)
+                                                              ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=21) (actual time=0.001..0.001 rows=0 loops=2315)
+                                                                    Index Cond: (id = ml.movie_id)
+                                                                    Filter: (production_year = 1998)
+                                                                    Rows Removed by Filter: 1
+                                                        ->  Index Scan using movie_id_complete_cast on complete_cast cc  (cost=0.00..4.00 rows=2 width=12) (actual time=0.001..0.001 rows=0 loops=141)
+                                                              Index Cond: (movie_id = ml.movie_id)
+                                                  ->  Index Scan using comp_cast_type_pkey on comp_cast_type cct1  (cost=0.00..2.00 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=57)
+                                                        Index Cond: (id = cc.subject_id)
+                                                        Filter: ((kind)::text = ANY ('{cast,crew}'::text[]))
+                                            ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.00..10.00 rows=3 width=12) (actual time=0.002..0.003 rows=6 loops=57)
+                                                  Index Cond: (movie_id = ml.movie_id)
+                                                  Filter: (note IS NULL)
+                                                  Rows Removed by Filter: 1
+                                      ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=1 width=23) (actual time=0.002..0.002 rows=0 loops=342)
+                                            Index Cond: (id = mc.company_id)
+                                            Filter: (((country_code)::text <> '[pl]'::text) AND ((name ~~ '%Film%'::text) OR (name ~~ '%Warner%'::text)))
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using comp_cast_type_pkey on comp_cast_type cct2  (cost=0.00..2.00 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=152)
+                                      Index Cond: (id = cc.status_id)
+                                      Filter: ((kind)::text = 'complete'::text)
+                                      Rows Removed by Filter: 0
+                          ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.00..84.00 rows=1 width=4) (actual time=0.005..0.006 rows=3 loops=95)
+                                Index Cond: (movie_id = ml.movie_id)
+                                Filter: (info = ANY ('{Sweden,Germany,Swedish,German}'::text[]))
+                                Rows Removed by Filter: 10
+                    ->  Index Scan using movie_id_movie_keyword on movie_keyword mk  (cost=0.00..90.00 rows=45 width=8) (actual time=0.001..0.002 rows=8 loops=247)
+                          Index Cond: (movie_id = ml.movie_id)
+              ->  Index Scan using keyword_pkey on keyword k  (cost=0.00..2.00 rows=1 width=4) (actual time=0.001..0.001 rows=0 loops=1919)
+                    Index Cond: (id = mk.keyword_id)
+                    Filter: (keyword = 'sequel'::text)
+                    Rows Removed by Filter: 1
+        ->  Index Scan using company_type_pkey on company_type ct  (cost=0.00..2.00 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=247)
+              Index Cond: (id = mc.company_type_id)
+              Filter: ((kind)::text = 'production companies'::text)
+Planning time: 44.433 ms
+Execution time: 10.165 ms

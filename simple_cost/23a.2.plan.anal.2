@@ -1,0 +1,58 @@
+Aggregate  (cost=383353.80..383354.80 rows=1 width=64) (actual time=166.587..166.587 rows=1 loops=1)
+  ->  Nested Loop  (cost=218053.00..383353.80 rows=2 width=27) (actual time=112.910..166.434 rows=618 loops=1)
+        ->  Nested Loop  (cost=218053.00..383349.80 rows=2 width=31) (actual time=112.901..164.999 rows=618 loops=1)
+              ->  Nested Loop  (cost=218053.00..383214.80 rows=1 width=43) (actual time=112.891..164.763 rows=6 loops=1)
+                    ->  Nested Loop  (cost=218053.00..383212.00 rows=1 width=47) (actual time=112.885..164.744 rows=6 loops=1)
+                          ->  Nested Loop  (cost=218053.00..383210.00 rows=1 width=51) (actual time=112.876..164.708 rows=6 loops=1)
+                                ->  Nested Loop  (cost=218053.00..383195.00 rows=1 width=39) (actual time=112.868..164.676 rows=5 loops=1)
+                                      ->  Nested Loop  (cost=218053.00..383173.00 rows=10 width=43) (actual time=112.862..164.658 rows=5 loops=1)
+                                            ->  Merge Join  (cost=218053.00..219973.00 rows=1920 width=35) (actual time=104.638..104.954 rows=1033 loops=1)
+                                                  Merge Cond: (t.kind_id = kt.id)
+                                                  ->  Sort  (cost=218046.00..218046.00 rows=13437 width=29) (actual time=104.622..104.707 rows=1034 loops=1)
+                                                        Sort Key: t.kind_id
+                                                        Sort Method: quicksort  Memory: 262kB
+                                                        ->  Nested Loop  (cost=135090.00..218046.00 rows=13437 width=29) (actual time=38.811..104.160 rows=2083 loops=1)
+                                                              ->  Merge Join  (cost=135090.00..168862.00 rows=24592 width=4) (actual time=38.768..45.596 rows=24592 loops=1)
+                                                                    Merge Cond: (cc.status_id = cct1.id)
+                                                                    ->  Sort  (cost=135086.00..135086.00 rows=135086 width=8) (actual time=27.333..35.010 rows=135086 loops=1)
+                                                                          Sort Key: cc.status_id
+                                                                          Sort Method: quicksort  Memory: 12477kB
+                                                                          ->  Seq Scan on complete_cast cc  (cost=0.00..135086.00 rows=135086 width=8) (actual time=0.010..13.604 rows=135086 loops=1)
+                                                                    ->  Sort  (cost=4.00..4.00 rows=1 width=4) (actual time=0.014..0.014 rows=1 loops=1)
+                                                                          Sort Key: cct1.id
+                                                                          Sort Method: quicksort  Memory: 25kB
+                                                                          ->  Seq Scan on comp_cast_type cct1  (cost=0.00..4.00 rows=1 width=4) (actual time=0.007..0.008 rows=1 loops=1)
+                                                                                Filter: ((kind)::text = 'complete+verified'::text)
+                                                                                Rows Removed by Filter: 3
+                                                              ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=25) (actual time=0.002..0.002 rows=0 loops=24592)
+                                                                    Index Cond: (id = cc.movie_id)
+                                                                    Filter: (production_year > 2000)
+                                                                    Rows Removed by Filter: 1
+                                                  ->  Sort  (cost=7.00..7.00 rows=1 width=14) (actual time=0.013..0.014 rows=1 loops=1)
+                                                        Sort Key: kt.id
+                                                        Sort Method: quicksort  Memory: 25kB
+                                                        ->  Seq Scan on kind_type kt  (cost=0.00..7.00 rows=1 width=14) (actual time=0.007..0.008 rows=1 loops=1)
+                                                              Filter: ((kind)::text = 'movie'::text)
+                                                              Rows Removed by Filter: 6
+                                            ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.00..84.00 rows=1 width=8) (actual time=0.058..0.058 rows=0 loops=1033)
+                                                  Index Cond: (movie_id = t.id)
+                                                  Filter: ((note ~~ '%internet%'::text) AND (info IS NOT NULL) AND ((info ~~ 'USA:% 199%'::text) OR (info ~~ 'USA:% 200%'::text)))
+                                                  Rows Removed by Filter: 211
+                                      ->  Index Scan using info_type_pkey on info_type it1  (cost=0.00..2.00 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=5)
+                                            Index Cond: (id = mi.info_type_id)
+                                            Filter: ((info)::text = 'release dates'::text)
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.00..10.00 rows=5 width=12) (actual time=0.005..0.005 rows=1 loops=5)
+                                      Index Cond: (movie_id = t.id)
+                          ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=1 width=4) (actual time=0.005..0.005 rows=1 loops=6)
+                                Index Cond: (id = mc.company_id)
+                                Filter: ((country_code)::text = '[us]'::text)
+                    ->  Index Only Scan using company_type_pkey on company_type ct  (cost=0.00..2.00 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=6)
+                          Index Cond: (id = mc.company_type_id)
+                          Heap Fetches: 6
+              ->  Index Scan using movie_id_movie_keyword on movie_keyword mk  (cost=0.00..90.00 rows=45 width=8) (actual time=0.005..0.023 rows=103 loops=6)
+                    Index Cond: (movie_id = t.id)
+        ->  Index Only Scan using keyword_pkey on keyword k  (cost=0.00..2.00 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=618)
+              Index Cond: (id = mk.keyword_id)
+              Heap Fetches: 618
+Planning time: 18.661 ms
+Execution time: 166.691 ms

@@ -1,0 +1,56 @@
+Aggregate  (cost=612022.00..612023.00 rows=1 width=128) (actual time=229.807..229.807 rows=1 loops=1)
+  ->  Nested Loop  (cost=471200.00..612022.00 rows=6 width=79) (actual time=141.357..228.549 rows=2825 loops=1)
+        ->  Nested Loop  (cost=471200.00..612010.00 rows=6 width=82) (actual time=141.352..223.689 rows=2825 loops=1)
+              ->  Hash Join  (cost=471200.00..611998.00 rows=6 width=71) (actual time=141.345..217.857 rows=2825 loops=1)
+                    Hash Cond: (mk.movie_id = mi.movie_id)
+                    ->  Nested Loop  (cost=0.00..140575.00 rows=76714 width=4) (actual time=0.642..70.738 rows=76714 loops=1)
+                          ->  Seq Scan on keyword k  (cost=0.00..134170.00 rows=7 width=4) (actual time=0.632..21.194 rows=7 loops=1)
+                                Filter: (keyword = ANY ('{murder,violence,blood,gore,death,female-nudity,hospital}'::text[]))
+                                Rows Removed by Filter: 134163
+                          ->  Index Scan using keyword_id_movie_keyword on movie_keyword mk  (cost=0.00..610.00 rows=305 width=8) (actual time=0.006..5.847 rows=10959 loops=7)
+                                Index Cond: (keyword_id = k.id)
+                    ->  Hash  (cost=470183.00..470183.00 rows=1017 width=67) (actual time=140.056..140.056 rows=1017 loops=1)
+                          Buckets: 1024  Batches: 1  Memory Usage: 77kB
+                          ->  Nested Loop  (cost=255540.00..470183.00 rows=1017 width=67) (actual time=28.344..139.838 rows=1017 loops=1)
+                                ->  Hash Join  (cost=255540.00..380028.00 rows=1235 width=59) (actual time=28.251..70.327 rows=1235 loops=1)
+                                      Hash Cond: (mi.info_type_id = it1.id)
+                                      ->  Nested Loop  (cost=255426.00..378630.00 rows=1295 width=63) (actual time=28.235..70.018 rows=1295 loops=1)
+                                            ->  Merge Join  (cost=255426.00..255465.00 rows=1449 width=13) (actual time=28.173..28.596 rows=1449 loops=1)
+                                                  Merge Cond: (mi_idx.info_type_id = it2.id)
+                                                  ->  Sort  (cost=255313.00..255313.00 rows=4370 width=17) (actual time=27.971..28.199 rows=2899 loops=1)
+                                                        Sort Key: mi_idx.info_type_id
+                                                        Sort Method: quicksort  Memory: 465kB
+                                                        ->  Nested Loop  (cost=0.00..255313.00 rows=4370 width=17) (actual time=0.476..27.253 rows=4370 loops=1)
+                                                              ->  Nested Loop  (cost=0.00..238987.00 rows=1814 width=4) (actual time=0.470..22.227 rows=1814 loops=1)
+                                                                    ->  Seq Scan on company_name cn  (cost=0.00..234997.00 rows=10 width=4) (actual time=0.462..20.932 rows=10 loops=1)
+                                                                          Filter: (name ~~ 'Lionsgate%'::text)
+                                                                          Rows Removed by Filter: 234987
+                                                                    ->  Index Scan using company_id_movie_companies on movie_companies mc  (cost=0.00..266.00 rows=133 width=8) (actual time=0.006..0.108 rows=181 loops=10)
+                                                                          Index Cond: (company_id = cn.id)
+                                                              ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.00..6.00 rows=3 width=13) (actual time=0.002..0.002 rows=2 loops=1814)
+                                                                    Index Cond: (movie_id = mc.movie_id)
+                                                  ->  Sort  (cost=113.00..113.00 rows=1 width=4) (actual time=0.014..0.015 rows=1 loops=1)
+                                                        Sort Key: it2.id
+                                                        Sort Method: quicksort  Memory: 25kB
+                                                        ->  Seq Scan on info_type it2  (cost=0.00..113.00 rows=1 width=4) (actual time=0.010..0.010 rows=1 loops=1)
+                                                              Filter: ((info)::text = 'votes'::text)
+                                                              Rows Removed by Filter: 112
+                                            ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.00..84.00 rows=1 width=50) (actual time=0.028..0.028 rows=1 loops=1449)
+                                                  Index Cond: (movie_id = mi_idx.movie_id)
+                                                  Filter: (info = ANY ('{Horror,Action,Sci-Fi,Thriller,Crime,War}'::text[]))
+                                                  Rows Removed by Filter: 75
+                                      ->  Hash  (cost=113.00..113.00 rows=1 width=4) (actual time=0.012..0.012 rows=1 loops=1)
+                                            Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                            ->  Seq Scan on info_type it1  (cost=0.00..113.00 rows=1 width=4) (actual time=0.005..0.011 rows=1 loops=1)
+                                                  Filter: ((info)::text = 'genres'::text)
+                                                  Rows Removed by Filter: 112
+                                ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.00..72.00 rows=1 width=8) (actual time=0.042..0.056 rows=1 loops=1235)
+                                      Index Cond: (movie_id = mi.movie_id)
+                                      Filter: (note = ANY ('{(writer),"(head writer)","(written by)",(story),"(story editor)"}'::text[]))
+                                      Rows Removed by Filter: 102
+              ->  Index Scan using name_pkey on name n  (cost=0.00..2.00 rows=1 width=19) (actual time=0.002..0.002 rows=1 loops=2825)
+                    Index Cond: (id = ci.person_id)
+        ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=21) (actual time=0.001..0.001 rows=1 loops=2825)
+              Index Cond: (id = mi.movie_id)
+Planning time: 27.088 ms
+Execution time: 229.885 ms

@@ -1,0 +1,72 @@
+Aggregate  (cost=308273.50..308274.50 rows=1 width=128) (actual time=404.600..404.600 rows=1 loops=1)
+  ->  Nested Loop  (cost=291939.00..308273.50 rows=1 width=79) (actual time=137.996..404.201 rows=757 loops=1)
+        ->  Nested Loop  (cost=291939.00..308269.00 rows=2 width=83) (actual time=137.972..339.884 rows=34335 loops=1)
+              ->  Nested Loop  (cost=291939.00..308134.00 rows=1 width=99) (actual time=137.965..328.680 rows=274 loops=1)
+                    ->  Nested Loop  (cost=291939.00..308132.00 rows=1 width=88) (actual time=137.413..327.097 rows=384 loops=1)
+                          ->  Nested Loop  (cost=291939.00..308059.00 rows=1 width=80) (actual time=136.996..281.796 rows=432 loops=1)
+                                ->  Nested Loop  (cost=291939.00..308047.00 rows=5 width=84) (actual time=136.993..281.223 rows=432 loops=1)
+                                      ->  Nested Loop  (cost=291939.00..292917.00 rows=178 width=34) (actual time=136.530..204.748 rows=1875 loops=1)
+                                            ->  Merge Join  (cost=291939.00..292265.00 rows=326 width=13) (actual time=136.475..143.291 rows=23558 loops=1)
+                                                  Merge Cond: (it2.id = mi_idx.info_type_id)
+                                                  ->  Sort  (cost=113.00..113.00 rows=1 width=4) (actual time=0.016..0.016 rows=1 loops=1)
+                                                        Sort Key: it2.id
+                                                        Sort Method: quicksort  Memory: 25kB
+                                                        ->  Seq Scan on info_type it2  (cost=0.00..113.00 rows=1 width=4) (actual time=0.012..0.013 rows=1 loops=1)
+                                                              Filter: ((info)::text = 'votes'::text)
+                                                              Rows Removed by Filter: 112
+                                                  ->  Sort  (cost=291826.00..291826.00 rows=36883 width=17) (actual time=133.794..137.602 rows=47117 loops=1)
+                                                        Sort Key: mi_idx.info_type_id
+                                                        Sort Method: quicksort  Memory: 7418kB
+                                                        ->  Nested Loop  (cost=168866.00..291826.00 rows=36883 width=17) (actual time=46.028..121.277 rows=71011 loops=1)
+                                                              ->  Merge Join  (cost=168866.00..181162.00 rows=12296 width=4) (actual time=46.019..50.825 rows=24592 loops=1)
+                                                                    Merge Cond: (cct1.id = cc.subject_id)
+                                                                    ->  Sort  (cost=4.00..4.00 rows=2 width=4) (actual time=0.005..0.005 rows=2 loops=1)
+                                                                          Sort Key: cct1.id
+                                                                          Sort Method: quicksort  Memory: 25kB
+                                                                          ->  Seq Scan on comp_cast_type cct1  (cost=0.00..4.00 rows=2 width=4) (actual time=0.002..0.003 rows=2 loops=1)
+                                                                                Filter: ((kind)::text = ANY ('{cast,crew}'::text[]))
+                                                                                Rows Removed by Filter: 2
+                                                                    ->  Sort  (cost=168862.00..168862.00 rows=24592 width=8) (actual time=46.013..47.592 rows=24592 loops=1)
+                                                                          Sort Key: cc.subject_id
+                                                                          Sort Method: quicksort  Memory: 1921kB
+                                                                          ->  Merge Join  (cost=135090.00..168862.00 rows=24592 width=8) (actual time=39.899..43.905 rows=24592 loops=1)
+                                                                                Merge Cond: (cct2.id = cc.status_id)
+                                                                                ->  Sort  (cost=4.00..4.00 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=1)
+                                                                                      Sort Key: cct2.id
+                                                                                      Sort Method: quicksort  Memory: 25kB
+                                                                                      ->  Seq Scan on comp_cast_type cct2  (cost=0.00..4.00 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=1)
+                                                                                            Filter: ((kind)::text = 'complete+verified'::text)
+                                                                                            Rows Removed by Filter: 3
+                                                                                ->  Sort  (cost=135086.00..135086.00 rows=135086 width=12) (actual time=28.294..34.306 rows=135086 loops=1)
+                                                                                      Sort Key: cc.status_id
+                                                                                      Sort Method: quicksort  Memory: 12477kB
+                                                                                      ->  Seq Scan on complete_cast cc  (cost=0.00..135086.00 rows=135086 width=12) (actual time=0.005..13.807 rows=135086 loops=1)
+                                                              ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.00..6.00 rows=3 width=13) (actual time=0.002..0.002 rows=3 loops=24592)
+                                                                    Index Cond: (movie_id = cc.movie_id)
+                                            ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=21) (actual time=0.002..0.002 rows=0 loops=23558)
+                                                  Index Cond: (id = mi_idx.movie_id)
+                                                  Filter: (production_year > 2000)
+                                                  Rows Removed by Filter: 1
+                                      ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.00..84.00 rows=1 width=50) (actual time=0.040..0.041 rows=0 loops=1875)
+                                            Index Cond: (movie_id = t.id)
+                                            Filter: (info = ANY ('{Horror,Thriller}'::text[]))
+                                            Rows Removed by Filter: 126
+                                ->  Index Scan using info_type_pkey on info_type it1  (cost=0.00..2.00 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=432)
+                                      Index Cond: (id = mi.info_type_id)
+                                      Filter: ((info)::text = 'genres'::text)
+                          ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.00..72.00 rows=1 width=8) (actual time=0.069..0.104 rows=1 loops=432)
+                                Index Cond: (movie_id = t.id)
+                                Filter: (note = ANY ('{(writer),"(head writer)","(written by)",(story),"(story editor)"}'::text[]))
+                                Rows Removed by Filter: 121
+                    ->  Index Scan using name_pkey on name n  (cost=0.00..2.00 rows=1 width=19) (actual time=0.004..0.004 rows=1 loops=384)
+                          Index Cond: (id = ci.person_id)
+                          Filter: ((gender)::text = 'm'::text)
+                          Rows Removed by Filter: 0
+              ->  Index Scan using movie_id_movie_keyword on movie_keyword mk  (cost=0.00..90.00 rows=45 width=8) (actual time=0.005..0.026 rows=125 loops=274)
+                    Index Cond: (movie_id = t.id)
+        ->  Index Scan using keyword_pkey on keyword k  (cost=0.00..2.00 rows=1 width=4) (actual time=0.002..0.002 rows=0 loops=34335)
+              Index Cond: (id = mk.keyword_id)
+              Filter: (keyword = ANY ('{murder,violence,blood,gore,death,female-nudity,hospital}'::text[]))
+              Rows Removed by Filter: 1
+Planning time: 45.141 ms
+Execution time: 404.692 ms

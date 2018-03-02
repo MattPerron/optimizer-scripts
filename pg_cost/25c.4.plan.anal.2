@@ -1,0 +1,52 @@
+Aggregate  (cost=609911.24..609911.25 rows=1 width=128) (actual time=5803.970..5803.970 rows=1 loops=1)
+  ->  Nested Loop  (cost=176036.55..609911.23 rows=1 width=79) (actual time=3022.944..5790.969 rows=26153 loops=1)
+        ->  Nested Loop  (cost=176036.12..609910.21 rows=1 width=68) (actual time=3022.938..5688.293 rows=42900 loops=1)
+              Join Filter: (t.id = ci.movie_id)
+              ->  Hash Join  (cost=176035.56..607965.81 rows=69 width=80) (actual time=3022.419..3554.984 rows=63386 loops=1)
+                    Hash Cond: (mi.info_type_id = it1.id)
+                    ->  Nested Loop  (cost=176033.13..607961.78 rows=128 width=84) (actual time=2410.520..3540.488 rows=67732 loops=1)
+                          Join Filter: (mi.movie_id = t.id)
+                          ->  Hash Join  (cost=176032.70..607856.92 rows=128 width=63) (actual time=2410.496..3401.578 rows=67732 loops=1)
+                                Hash Cond: (mi.movie_id = mi_idx.movie_id)
+                                ->  Hash Join  (cost=131231.31..557988.77 rows=72386 width=54) (actual time=2099.638..3066.275 rows=72386 loops=1)
+                                      Hash Cond: (mi.movie_id = mk.movie_id)
+                                      ->  Seq Scan on movie_info mi  (cost=0.00..421618.10 rows=188971 width=50) (actual time=1110.725..2360.414 rows=188971 loops=1)
+                                            Filter: (info = ANY ('{Horror,Action,Sci-Fi,Thriller,Crime,War}'::text[]))
+                                            Rows Removed by Filter: 14646749
+                                      ->  Hash  (cost=130272.39..130272.39 rows=76714 width=4) (actual time=659.895..659.895 rows=76714 loops=1)
+                                            Buckets: 131072  Batches: 1  Memory Usage: 3721kB
+                                            ->  Hash Join  (cost=3464.78..130272.39 rows=76714 width=4) (actual time=20.744..651.302 rows=76714 loops=1)
+                                                  Hash Cond: (mk.keyword_id = k.id)
+                                                  ->  Seq Scan on movie_keyword mk  (cost=0.00..69693.30 rows=4523930 width=8) (actual time=0.007..293.161 rows=4523930 loops=1)
+                                                  ->  Hash  (cost=3464.69..3464.69 rows=7 width=4) (actual time=20.708..20.708 rows=7 loops=1)
+                                                        Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                        ->  Seq Scan on keyword k  (cost=0.00..3464.69 rows=7 width=4) (actual time=0.560..20.706 rows=7 loops=1)
+                                                              Filter: (keyword = ANY ('{murder,violence,blood,gore,death,female-nudity,hospital}'::text[]))
+                                                              Rows Removed by Filter: 134163
+                                ->  Hash  (cost=39052.33..39052.33 rows=459925 width=9) (actual time=310.280..310.280 rows=459925 loops=1)
+                                      Buckets: 524288  Batches: 1  Memory Usage: 22143kB
+                                      ->  Hash Join  (cost=2.43..39052.33 rows=459925 width=9) (actual time=0.018..253.639 rows=459925 loops=1)
+                                            Hash Cond: (mi_idx.info_type_id = it2.id)
+                                            ->  Seq Scan on movie_info_idx mi_idx  (cost=0.00..21735.35 rows=1380035 width=13) (actual time=0.005..93.095 rows=1380035 loops=1)
+                                            ->  Hash  (cost=2.41..2.41 rows=1 width=4) (actual time=0.009..0.009 rows=1 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                  ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.008..0.009 rows=1 loops=1)
+                                                        Filter: ((info)::text = 'votes'::text)
+                                                        Rows Removed by Filter: 112
+                          ->  Index Scan using title_pkey on title t  (cost=0.43..0.81 rows=1 width=21) (actual time=0.002..0.002 rows=1 loops=67732)
+                                Index Cond: (id = mk.movie_id)
+                    ->  Hash  (cost=2.41..2.41 rows=1 width=4) (actual time=0.015..0.015 rows=1 loops=1)
+                          Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                          ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.008..0.014 rows=1 loops=1)
+                                Filter: ((info)::text = 'genres'::text)
+                                Rows Removed by Filter: 112
+              ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..28.17 rows=1 width=8) (actual time=0.026..0.033 rows=1 loops=63386)
+                    Index Cond: (movie_id = mk.movie_id)
+                    Filter: (note = ANY ('{(writer),"(head writer)","(written by)",(story),"(story editor)"}'::text[]))
+                    Rows Removed by Filter: 63
+        ->  Index Scan using name_pkey on name n  (cost=0.43..1.02 rows=1 width=19) (actual time=0.002..0.002 rows=1 loops=42900)
+              Index Cond: (id = ci.person_id)
+              Filter: ((gender)::text = 'm'::text)
+              Rows Removed by Filter: 0
+Planning time: 7.157 ms
+Execution time: 5804.132 ms

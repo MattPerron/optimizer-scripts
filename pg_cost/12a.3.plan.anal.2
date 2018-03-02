@@ -1,0 +1,44 @@
+Aggregate  (cost=67166.36..67166.37 rows=1 width=96) (actual time=399.049..399.049 rows=1 loops=1)
+  ->  Nested Loop  (cost=5.34..67166.35 rows=1 width=41) (actual time=17.399..398.836 rows=397 loops=1)
+        ->  Nested Loop  (cost=4.92..67165.90 rows=1 width=26) (actual time=15.260..395.995 rows=708 loops=1)
+              ->  Nested Loop  (cost=4.78..67156.63 rows=57 width=30) (actual time=15.255..395.159 rows=708 loops=1)
+                    Join Filter: (t.id = mi.movie_id)
+                    ->  Nested Loop  (cost=4.35..66976.03 rows=113 width=38) (actual time=1.472..322.272 rows=6610 loops=1)
+                          Join Filter: (mi_idx.movie_id = t.id)
+                          ->  Hash Join  (cost=3.92..66637.37 rows=638 width=17) (actual time=0.058..270.603 rows=24233 loops=1)
+                                Hash Cond: (mc.company_type_id = ct.id)
+                                ->  Nested Loop  (cost=2.86..65962.95 rows=64707 width=21) (actual time=0.039..262.863 rows=64707 loops=1)
+                                      ->  Hash Join  (cost=2.43..25851.09 rows=15849 width=9) (actual time=0.033..206.368 rows=15849 loops=1)
+                                            Hash Cond: (mi_idx.info_type_id = it2.id)
+                                            ->  Seq Scan on movie_info_idx mi_idx  (cost=0.00..25185.44 rows=52862 width=13) (actual time=0.018..199.648 rows=52862 loops=1)
+                                                  Filter: (info > '8.0'::text)
+                                                  Rows Removed by Filter: 1327173
+                                            ->  Hash  (cost=2.41..2.41 rows=1 width=4) (actual time=0.011..0.011 rows=1 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                  ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.009..0.010 rows=1 loops=1)
+                                                        Filter: ((info)::text = 'rating'::text)
+                                                        Rows Removed by Filter: 112
+                                      ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..2.48 rows=5 width=12) (actual time=0.002..0.003 rows=4 loops=15849)
+                                            Index Cond: (movie_id = mi_idx.movie_id)
+                                ->  Hash  (cost=1.05..1.05 rows=1 width=4) (actual time=0.007..0.007 rows=1 loops=1)
+                                      Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                      ->  Seq Scan on company_type ct  (cost=0.00..1.05 rows=1 width=4) (actual time=0.005..0.006 rows=1 loops=1)
+                                            Filter: ((kind)::text = 'production companies'::text)
+                                            Rows Removed by Filter: 3
+                          ->  Index Scan using title_pkey on title t  (cost=0.43..0.52 rows=1 width=21) (actual time=0.002..0.002 rows=0 loops=24233)
+                                Index Cond: (id = mc.movie_id)
+                                Filter: ((production_year >= 2005) AND (production_year <= 2008))
+                                Rows Removed by Filter: 1
+                    ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..1.59 rows=1 width=8) (actual time=0.011..0.011 rows=0 loops=6610)
+                          Index Cond: (movie_id = mc.movie_id)
+                          Filter: (info = ANY ('{Drama,Horror}'::text[]))
+                          Rows Removed by Filter: 29
+              ->  Index Scan using info_type_pkey on info_type it1  (cost=0.14..0.16 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=708)
+                    Index Cond: (id = mi.info_type_id)
+                    Filter: ((info)::text = 'genres'::text)
+        ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.45 rows=1 width=23) (actual time=0.004..0.004 rows=1 loops=708)
+              Index Cond: (id = mc.company_id)
+              Filter: ((country_code)::text = '[us]'::text)
+              Rows Removed by Filter: 0
+Planning time: 3.411 ms
+Execution time: 399.121 ms

@@ -1,0 +1,45 @@
+Aggregate  (cost=321599.05..321599.06 rows=1 width=64) (actual time=2278.274..2278.274 rows=1 loops=1)
+  ->  Hash Join  (cost=191023.27..321258.12 rows=68185 width=112) (actual time=789.676..1899.514 rows=68185 loops=1)
+        Hash Cond: (ci.person_id = n.id)
+        ->  Nested Loop  (cost=2.31..126089.47 rows=1097209 width=4) (actual time=0.067..969.442 rows=1097209 loops=1)
+              ->  Nested Loop  (cost=1.75..91168.03 rows=14194 width=8) (actual time=0.038..82.026 rows=14194 loops=1)
+                    ->  Hash Join  (cost=1.32..828.22 rows=21505 width=4) (actual time=0.022..9.112 rows=21505 loops=1)
+                          Hash Cond: (ml.link_type_id = lt.id)
+                          ->  Seq Scan on movie_link ml  (cost=0.00..462.97 rows=29997 width=8) (actual time=0.006..2.786 rows=29997 loops=1)
+                          ->  Hash  (cost=1.27..1.27 rows=4 width=4) (actual time=0.012..0.012 rows=4 loops=1)
+                                Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                ->  Seq Scan on link_type lt  (cost=0.00..1.27 rows=4 width=4) (actual time=0.004..0.006 rows=4 loops=1)
+                                      Filter: ((link)::text = ANY ('{references,"referenced in",features,"featured in"}'::text[]))
+                                      Rows Removed by Filter: 14
+                    ->  Index Scan using title_pkey on title t  (cost=0.43..4.20 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=21505)
+                          Index Cond: (id = ml.linked_movie_id)
+                          Filter: ((production_year >= 1980) AND (production_year <= 2010))
+                          Rows Removed by Filter: 0
+              ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..2.10 rows=36 width=8) (actual time=0.005..0.053 rows=77 loops=14194)
+                    Index Cond: (movie_id = t.id)
+        ->  Hash  (cost=190863.52..190863.52 rows=12595 width=124) (actual time=789.470..789.470 rows=12595 loops=1)
+              Buckets: 16384  Batches: 1  Memory Usage: 10512kB
+              ->  Hash Join  (cost=33495.19..190863.52 rows=12595 width=124) (actual time=294.065..779.114 rows=12595 loops=1)
+                    Hash Cond: (pi.info_type_id = it.id)
+                    ->  Nested Loop  (cost=33492.76..190703.06 rows=12595 width=128) (actual time=294.040..776.052 rows=12595 loops=1)
+                          ->  Hash Join  (cost=33492.33..128607.63 rows=72979 width=109) (actual time=293.970..608.401 rows=72979 loops=1)
+                                Hash Cond: (pi.person_id = an.person_id)
+                                ->  Seq Scan on person_info pi  (cost=0.00..80687.64 rows=84183 width=105) (actual time=0.004..285.312 rows=84183 loops=1)
+                                      Filter: (note IS NOT NULL)
+                                      Rows Removed by Filter: 2879481
+                                ->  Hash  (cost=24916.14..24916.14 rows=686095 width=4) (actual time=291.203..291.203 rows=686095 loops=1)
+                                      Buckets: 1048576  Batches: 1  Memory Usage: 32313kB
+                                      ->  Seq Scan on aka_name an  (cost=0.00..24916.14 rows=686095 width=4) (actual time=0.006..184.169 rows=686095 loops=1)
+                                            Filter: ((name IS NOT NULL) AND ((name ~~ '%a%'::text) OR (name ~~ 'A%'::text)))
+                                            Rows Removed by Filter: 215248
+                          ->  Index Scan using name_pkey on name n  (cost=0.43..0.85 rows=1 width=19) (actual time=0.002..0.002 rows=0 loops=72979)
+                                Index Cond: (id = an.person_id)
+                                Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'A%'::text))))
+                                Rows Removed by Filter: 1
+                    ->  Hash  (cost=2.41..2.41 rows=1 width=4) (actual time=0.013..0.013 rows=1 loops=1)
+                          Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                          ->  Seq Scan on info_type it  (cost=0.00..2.41 rows=1 width=4) (actual time=0.005..0.011 rows=1 loops=1)
+                                Filter: ((info)::text = 'mini biography'::text)
+                                Rows Removed by Filter: 112
+Planning time: 3.411 ms
+Execution time: 2278.626 ms

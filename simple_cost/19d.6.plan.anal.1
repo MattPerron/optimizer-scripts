@@ -1,0 +1,62 @@
+Aggregate  (cost=10761658.00..10761659.00 rows=1 width=64) (actual time=10731.225..10731.225 rows=1 loops=1)
+  ->  Merge Join  (cost=10636137.00..10761658.00 rows=7374 width=32) (actual time=9008.230..10392.207 rows=1760645 loops=1)
+        Merge Cond: (mc.company_id = cn.id)
+        ->  Sort  (cost=10401140.00..10401140.00 rows=347665 width=36) (actual time=8963.542..9712.401 rows=6023690 loops=1)
+              Sort Key: mc.company_id
+              Sort Method: quicksort  Memory: 724676kB
+              ->  Nested Loop  (cost=9611889.00..10401140.00 rows=347665 width=36) (actual time=4798.225..7635.073 rows=6023690 loops=1)
+                    ->  Merge Join  (cost=9611889.00..9670745.00 rows=48693 width=44) (actual time=4798.203..5058.317 rows=702993 loops=1)
+                          Merge Cond: (n.id = an.person_id)
+                          ->  Sort  (cost=8710546.00..8710546.00 rows=272130 width=52) (actual time=4439.747..4483.037 rows=341836 loops=1)
+                                Sort Key: ci.person_id
+                                Sort Method: quicksort  Memory: 56318kB
+                                ->  Merge Join  (cost=8519205.00..8710546.00 rows=272130 width=52) (actual time=3961.055..4346.105 rows=341836 loops=1)
+                                      Merge Cond: (mi.movie_id = t.id)
+                                      ->  Sort  (cost=635930.00..635930.00 rows=3036719 width=4) (actual time=1338.894..1474.700 rows=3036577 loops=1)
+                                            Sort Key: mi.movie_id
+                                            Sort Method: quicksort  Memory: 240651kB
+                                            ->  Nested Loop  (cost=0.00..635930.00 rows=3036719 width=4) (actual time=0.025..747.930 rows=3036719 loops=1)
+                                                  ->  Seq Scan on info_type it  (cost=0.00..113.00 rows=1 width=4) (actual time=0.010..0.018 rows=1 loops=1)
+                                                        Filter: ((info)::text = 'release dates'::text)
+                                                        Rows Removed by Filter: 112
+                                                  ->  Index Scan using info_type_id_movie_info on movie_info mi  (cost=0.00..423878.00 rows=211939 width=8) (actual time=0.014..444.641 rows=3036719 loops=1)
+                                                        Index Cond: (info_type_id = it.id)
+                                      ->  Sort  (cost=7883275.00..7883275.00 rows=159307 width=48) (actual time=2622.145..2640.898 rows=344513 loops=1)
+                                            Sort Key: ci.movie_id
+                                            Sort Method: quicksort  Memory: 25497kB
+                                            ->  Nested Loop  (cost=0.00..7883275.00 rows=159307 width=48) (actual time=0.359..2564.168 rows=159307 loops=1)
+                                                  ->  Nested Loop  (cost=0.00..7564377.00 rows=159449 width=29) (actual time=0.348..2284.659 rows=159449 loops=1)
+                                                        ->  Nested Loop  (cost=0.00..7227563.00 rows=168407 width=33) (actual time=0.338..1941.719 rows=168407 loops=1)
+                                                              ->  Nested Loop  (cost=0.00..6675231.00 rows=276166 width=12) (actual time=0.137..1230.874 rows=276166 loops=1)
+                                                                    ->  Seq Scan on role_type rt  (cost=0.00..12.00 rows=1 width=4) (actual time=0.012..0.015 rows=1 loops=1)
+                                                                          Filter: ((role)::text = 'actress'::text)
+                                                                          Rows Removed by Filter: 11
+                                                                    ->  Index Scan using role_id_cast_info on cast_info ci  (cost=0.00..6589880.00 rows=85339 width=16) (actual time=0.122..1200.892 rows=276166 loops=1)
+                                                                          Index Cond: (role_id = rt.id)
+                                                                          Filter: (note = ANY ('{(voice),"(voice: Japanese version)","(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                                                          Rows Removed by Filter: 7175807
+                                                              ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=21) (actual time=0.002..0.002 rows=1 loops=276166)
+                                                                    Index Cond: (id = ci.movie_id)
+                                                                    Filter: (production_year > 2000)
+                                                                    Rows Removed by Filter: 0
+                                                        ->  Index Only Scan using char_name_pkey on char_name chn  (cost=0.00..2.00 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=168407)
+                                                              Index Cond: (id = ci.person_role_id)
+                                                              Heap Fetches: 159449
+                                                  ->  Index Scan using name_pkey on name n  (cost=0.00..2.00 rows=1 width=19) (actual time=0.001..0.001 rows=1 loops=159449)
+                                                        Index Cond: (id = ci.person_id)
+                                                        Filter: ((gender)::text = 'f'::text)
+                                                        Rows Removed by Filter: 0
+                          ->  Sort  (cost=901343.00..901343.00 rows=901343 width=4) (actual time=316.694..390.811 rows=1272113 loops=1)
+                                Sort Key: an.person_id
+                                Sort Method: quicksort  Memory: 66827kB
+                                ->  Seq Scan on aka_name an  (cost=0.00..901343.00 rows=901343 width=4) (actual time=0.013..99.037 rows=901343 loops=1)
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.00..10.00 rows=5 width=8) (actual time=0.001..0.003 rows=9 loops=702993)
+                          Index Cond: (movie_id = t.id)
+        ->  Sort  (cost=234997.00..234997.00 rows=84843 width=4) (actual time=44.682..54.793 rows=84843 loops=1)
+              Sort Key: cn.id
+              Sort Method: quicksort  Memory: 7050kB
+              ->  Seq Scan on company_name cn  (cost=0.00..234997.00 rows=84843 width=4) (actual time=0.015..27.506 rows=84843 loops=1)
+                    Filter: ((country_code)::text = '[us]'::text)
+                    Rows Removed by Filter: 150154
+Planning time: 11.681 ms
+Execution time: 10743.425 ms

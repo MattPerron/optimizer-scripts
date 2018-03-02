@@ -1,0 +1,35 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Nested Loop
+                                                  ->  Nested Loop
+                                                        ->  Seq Scan on keyword k
+                                                              Filter: (keyword = ANY ('{superhero,sequel,second-part,marvel-comics,based-on-comic,tv-special,fight,violence}'::text[]))
+                                                        ->  Index Scan using keyword_id_movie_keyword on movie_keyword mk
+                                                              Index Cond: (keyword_id = k.id)
+                                                  ->  Index Scan using title_pkey on title t
+                                                        Index Cond: (id = mk.movie_id)
+                                                        Filter: (production_year > 1950)
+                                            ->  Index Scan using kind_type_pkey on kind_type kt
+                                                  Index Cond: (id = t.kind_id)
+                                                  Filter: ((kind)::text = 'movie'::text)
+                                      ->  Index Scan using movie_id_complete_cast on complete_cast cc
+                                            Index Cond: (movie_id = t.id)
+                                ->  Index Scan using comp_cast_type_pkey on comp_cast_type cct1
+                                      Index Cond: (id = cc.subject_id)
+                                      Filter: ((kind)::text = 'cast'::text)
+                          ->  Index Scan using comp_cast_type_pkey on comp_cast_type cct2
+                                Index Cond: (id = cc.status_id)
+                                Filter: ((kind)::text ~~ '%complete%'::text)
+                    ->  Index Scan using movie_id_cast_info on cast_info ci
+                          Index Cond: (movie_id = t.id)
+              ->  Index Scan using char_name_pkey on char_name chn
+                    Index Cond: (id = ci.person_role_id)
+                    Filter: ((name !~~ '%Sherlock%'::text) AND ((name ~~ '%Tony%Stark%'::text) OR (name ~~ '%Iron%Man%'::text)))
+        ->  Index Only Scan using name_pkey on name n
+              Index Cond: (id = ci.person_id)

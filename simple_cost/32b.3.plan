@@ -1,0 +1,23 @@
+Aggregate
+  ->  Merge Join
+        Merge Cond: (mk.movie_id = t1.id)
+        ->  Sort
+              Sort Key: mk.movie_id
+              ->  Nested Loop
+                    ->  Seq Scan on keyword k
+                          Filter: (keyword = 'character-name-in-title'::text)
+                    ->  Index Scan using keyword_id_movie_keyword on movie_keyword mk
+                          Index Cond: (keyword_id = k.id)
+        ->  Sort
+              Sort Key: ml.movie_id
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Hash Join
+                                Hash Cond: (ml.link_type_id = lt.id)
+                                ->  Seq Scan on movie_link ml
+                                ->  Hash
+                                      ->  Seq Scan on link_type lt
+                          ->  Index Scan using title_pkey on title t1
+                                Index Cond: (id = ml.movie_id)
+                    ->  Index Scan using title_pkey on title t2
+                          Index Cond: (id = ml.linked_movie_id)

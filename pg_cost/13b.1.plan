@@ -1,0 +1,35 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (t.id = mi.movie_id)
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                Join Filter: (t.id = mc.movie_id)
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Hash Join
+                                                  Hash Cond: (miidx.info_type_id = it.id)
+                                                  ->  Seq Scan on movie_info_idx miidx
+                                                  ->  Hash
+                                                        ->  Seq Scan on info_type it
+                                                              Filter: ((info)::text = 'rating'::text)
+                                            ->  Index Scan using title_pkey on title t
+                                                  Index Cond: (id = miidx.movie_id)
+                                                  Filter: ((title <> ''::text) AND ((title ~~ '%Champion%'::text) OR (title ~~ '%Loser%'::text)))
+                                      ->  Index Scan using kind_type_pkey on kind_type kt
+                                            Index Cond: (id = t.kind_id)
+                                            Filter: ((kind)::text = 'movie'::text)
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                      Index Cond: (movie_id = miidx.movie_id)
+                          ->  Index Scan using company_type_pkey on company_type ct
+                                Index Cond: (id = mc.company_type_id)
+                                Filter: ((kind)::text = 'production companies'::text)
+                    ->  Index Scan using company_name_pkey on company_name cn
+                          Index Cond: (id = mc.company_id)
+                          Filter: ((country_code)::text = '[us]'::text)
+              ->  Index Scan using movie_id_movie_info on movie_info mi
+                    Index Cond: (movie_id = mc.movie_id)
+        ->  Index Scan using info_type_pkey on info_type it2
+              Index Cond: (id = mi.info_type_id)
+              Filter: ((info)::text = 'release dates'::text)

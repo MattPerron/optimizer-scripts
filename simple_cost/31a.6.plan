@@ -1,0 +1,44 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Hash Join
+                                      Hash Cond: (mi.info_type_id = it1.id)
+                                      ->  Nested Loop
+                                            ->  Merge Join
+                                                  Merge Cond: (mi_idx.info_type_id = it2.id)
+                                                  ->  Sort
+                                                        Sort Key: mi_idx.info_type_id
+                                                        ->  Nested Loop
+                                                              ->  Nested Loop
+                                                                    ->  Seq Scan on company_name cn
+                                                                          Filter: (name ~~ 'Lionsgate%'::text)
+                                                                    ->  Index Scan using company_id_movie_companies on movie_companies mc
+                                                                          Index Cond: (company_id = cn.id)
+                                                              ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx
+                                                                    Index Cond: (movie_id = mc.movie_id)
+                                                  ->  Sort
+                                                        Sort Key: it2.id
+                                                        ->  Seq Scan on info_type it2
+                                                              Filter: ((info)::text = 'votes'::text)
+                                            ->  Index Scan using movie_id_movie_info on movie_info mi
+                                                  Index Cond: (movie_id = mi_idx.movie_id)
+                                                  Filter: (info = ANY ('{Horror,Thriller}'::text[]))
+                                      ->  Hash
+                                            ->  Seq Scan on info_type it1
+                                                  Filter: ((info)::text = 'genres'::text)
+                                ->  Index Scan using movie_id_cast_info on cast_info ci
+                                      Index Cond: (movie_id = mi.movie_id)
+                                      Filter: (note = ANY ('{(writer),"(head writer)","(written by)",(story),"(story editor)"}'::text[]))
+                          ->  Index Scan using name_pkey on name n
+                                Index Cond: (id = ci.person_id)
+                                Filter: ((gender)::text = 'm'::text)
+                    ->  Index Scan using movie_id_movie_keyword on movie_keyword mk
+                          Index Cond: (movie_id = mi.movie_id)
+              ->  Index Scan using keyword_pkey on keyword k
+                    Index Cond: (id = mk.keyword_id)
+                    Filter: (keyword = ANY ('{murder,violence,blood,gore,death,female-nudity,hospital}'::text[]))
+        ->  Index Scan using title_pkey on title t
+              Index Cond: (id = mi.movie_id)

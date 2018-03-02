@@ -1,0 +1,86 @@
+Aggregate  (cost=497896.80..497897.80 rows=1 width=96) (actual time=244.947..244.947 rows=1 loops=1)
+  ->  Nested Loop  (cost=322495.00..497896.80 rows=1 width=41) (actual time=113.631..243.234 rows=4803 loops=1)
+        ->  Nested Loop  (cost=322495.00..497894.00 rows=1 width=45) (actual time=113.627..238.754 rows=4803 loops=1)
+              ->  Nested Loop  (cost=322495.00..497892.00 rows=1 width=30) (actual time=113.622..229.274 rows=4955 loops=1)
+                    ->  Hash Join  (cost=322495.00..497760.00 rows=12 width=42) (actual time=113.446..224.123 rows=432 loops=1)
+                          Hash Cond: (mi_idx.info_type_id = it2.id)
+                          ->  Hash Join  (cost=322381.00..496286.00 rows=1372 width=46) (actual time=113.396..223.913 rows=1372 loops=1)
+                                Hash Cond: (cc.status_id = cct2.id)
+                                ->  Hash Join  (cost=322374.00..495075.00 rows=1605 width=50) (actual time=112.585..223.568 rows=1605 loops=1)
+                                      Hash Cond: (mi.info_type_id = it1.id)
+                                      ->  Nested Loop  (cost=322260.00..493179.00 rows=1798 width=54) (actual time=112.573..223.149 rows=1798 loops=1)
+                                            ->  Nested Loop  (cost=322260.00..345861.00 rows=1713 width=46) (actual time=111.928..130.958 rows=1713 loops=1)
+                                                  ->  Hash Join  (cost=322260.00..340281.00 rows=620 width=33) (actual time=111.921..128.585 rows=620 loops=1)
+                                                        Hash Cond: (t.kind_id = kt.id)
+                                                        ->  Nested Loop  (cost=322251.00..339689.00 rows=680 width=37) (actual time=111.914..128.424 rows=680 loops=1)
+                                                              ->  Merge Join  (cost=322251.00..327257.00 rows=6216 width=12) (actual time=111.901..113.465 rows=6216 loops=1)
+                                                                    Merge Cond: (cc.subject_id = cct1.id)
+                                                                    ->  Sort  (cost=322247.00..322247.00 rows=20024 width=16) (actual time=110.450..111.501 rows=20024 loops=1)
+                                                                          Sort Key: cc.subject_id
+                                                                          Sort Method: quicksort  Memory: 1707kB
+                                                                          ->  Merge Join  (cost=272001.00..322247.00 rows=20024 width=16) (actual time=87.159..108.267 rows=20024 loops=1)
+                                                                                Merge Cond: (cc.movie_id = mk.movie_id)
+                                                                                ->  Sort  (cost=135086.00..135086.00 rows=135086 width=12) (actual time=40.931..47.240 rows=132440 loops=1)
+                                                                                      Sort Key: cc.movie_id
+                                                                                      Sort Method: quicksort  Memory: 12477kB
+                                                                                      ->  Seq Scan on complete_cast cc  (cost=0.00..135086.00 rows=135086 width=12) (actual time=0.004..14.112 rows=135086 loops=1)
+                                                                                ->  Sort  (cost=136915.00..136915.00 rows=37091 width=4) (actual time=46.171..48.061 rows=43167 loops=1)
+                                                                                      Sort Key: mk.movie_id
+                                                                                      Sort Method: quicksort  Memory: 3275kB
+                                                                                      ->  Nested Loop  (cost=0.00..136915.00 rows=37091 width=4) (actual time=0.705..39.658 rows=37091 loops=1)
+                                                                                            ->  Seq Scan on keyword k  (cost=0.00..134170.00 rows=3 width=4) (actual time=0.697..15.781 rows=3 loops=1)
+                                                                                                  Filter: (keyword = ANY ('{murder,murder-in-title,blood,violence}'::text[]))
+                                                                                                  Rows Removed by Filter: 134167
+                                                                                            ->  Index Scan using keyword_id_movie_keyword on movie_keyword mk  (cost=0.00..610.00 rows=305 width=8) (actual time=0.007..6.590 rows=12364 loops=3)
+                                                                                                  Index Cond: (keyword_id = k.id)
+                                                                    ->  Sort  (cost=4.00..4.00 rows=1 width=4) (actual time=0.008..0.008 rows=1 loops=1)
+                                                                          Sort Key: cct1.id
+                                                                          Sort Method: quicksort  Memory: 25kB
+                                                                          ->  Seq Scan on comp_cast_type cct1  (cost=0.00..4.00 rows=1 width=4) (actual time=0.004..0.005 rows=1 loops=1)
+                                                                                Filter: ((kind)::text = 'crew'::text)
+                                                                                Rows Removed by Filter: 3
+                                                              ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=25) (actual time=0.002..0.002 rows=0 loops=6216)
+                                                                    Index Cond: (id = mk.movie_id)
+                                                                    Filter: (production_year > 2000)
+                                                                    Rows Removed by Filter: 1
+                                                        ->  Hash  (cost=7.00..7.00 rows=2 width=4) (actual time=0.004..0.004 rows=2 loops=1)
+                                                              Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                              ->  Seq Scan on kind_type kt  (cost=0.00..7.00 rows=2 width=4) (actual time=0.002..0.003 rows=2 loops=1)
+                                                                    Filter: ((kind)::text = ANY ('{movie,episode}'::text[]))
+                                                                    Rows Removed by Filter: 5
+                                                  ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.00..6.00 rows=3 width=13) (actual time=0.002..0.003 rows=3 loops=620)
+                                                        Index Cond: (movie_id = t.id)
+                                                        Filter: (info < '8.5'::text)
+                                                        Rows Removed by Filter: 0
+                                            ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.00..84.00 rows=2 width=8) (actual time=0.045..0.053 rows=1 loops=1713)
+                                                  Index Cond: (movie_id = t.id)
+                                                  Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Danish,Norwegian,German,USA,American}'::text[]))
+                                                  Rows Removed by Filter: 158
+                                      ->  Hash  (cost=113.00..113.00 rows=1 width=4) (actual time=0.009..0.009 rows=1 loops=1)
+                                            Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                            ->  Seq Scan on info_type it1  (cost=0.00..113.00 rows=1 width=4) (actual time=0.003..0.009 rows=1 loops=1)
+                                                  Filter: ((info)::text = 'countries'::text)
+                                                  Rows Removed by Filter: 112
+                                ->  Hash  (cost=4.00..4.00 rows=3 width=4) (actual time=0.003..0.003 rows=3 loops=1)
+                                      Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                      ->  Seq Scan on comp_cast_type cct2  (cost=0.00..4.00 rows=3 width=4) (actual time=0.002..0.002 rows=3 loops=1)
+                                            Filter: ((kind)::text <> 'complete+verified'::text)
+                                            Rows Removed by Filter: 1
+                          ->  Hash  (cost=113.00..113.00 rows=1 width=4) (actual time=0.015..0.015 rows=1 loops=1)
+                                Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                ->  Seq Scan on info_type it2  (cost=0.00..113.00 rows=1 width=4) (actual time=0.012..0.014 rows=1 loops=1)
+                                      Filter: ((info)::text = 'rating'::text)
+                                      Rows Removed by Filter: 112
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.00..10.00 rows=1 width=12) (actual time=0.004..0.010 rows=11 loops=432)
+                          Index Cond: (movie_id = t.id)
+                          Filter: ((note !~~ '%(USA)%'::text) AND (note ~~ '%(200%)%'::text))
+                          Rows Removed by Filter: 10
+              ->  Index Scan using company_name_pkey on company_name cn  (cost=0.00..2.00 rows=1 width=23) (actual time=0.002..0.002 rows=1 loops=4955)
+                    Index Cond: (id = mc.company_id)
+                    Filter: ((country_code)::text <> '[us]'::text)
+                    Rows Removed by Filter: 0
+        ->  Index Only Scan using company_type_pkey on company_type ct  (cost=0.00..2.00 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=4803)
+              Index Cond: (id = mc.company_type_id)
+              Heap Fetches: 4803
+Planning time: 54.249 ms
+Execution time: 245.031 ms

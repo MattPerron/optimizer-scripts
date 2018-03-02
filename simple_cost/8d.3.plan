@@ -1,0 +1,34 @@
+Aggregate
+  ->  Merge Join
+        Merge Cond: (n1.id = an1.person_id)
+        ->  Sort
+              Sort Key: ci.person_id
+              ->  Merge Join
+                    Merge Cond: (mc.movie_id = ci.movie_id)
+                    ->  Sort
+                          Sort Key: mc.movie_id
+                          ->  Merge Join
+                                Merge Cond: (cn.id = mc.company_id)
+                                ->  Sort
+                                      Sort Key: cn.id
+                                      ->  Seq Scan on company_name cn
+                                            Filter: ((country_code)::text = '[us]'::text)
+                                ->  Sort
+                                      Sort Key: mc.company_id
+                                      ->  Seq Scan on movie_companies mc
+                    ->  Sort
+                          Sort Key: ci.movie_id
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Seq Scan on role_type rt
+                                                  Filter: ((role)::text = 'costume designer'::text)
+                                            ->  Index Scan using role_id_cast_info on cast_info ci
+                                                  Index Cond: (role_id = rt.id)
+                                      ->  Index Only Scan using name_pkey on name n1
+                                            Index Cond: (id = ci.person_id)
+                                ->  Index Scan using title_pkey on title t
+                                      Index Cond: (id = ci.movie_id)
+        ->  Sort
+              Sort Key: an1.person_id
+              ->  Seq Scan on aka_name an1

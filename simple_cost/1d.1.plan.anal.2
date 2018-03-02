@@ -1,0 +1,26 @@
+Aggregate  (cost=952849.00..952850.00 rows=1 width=68) (actual time=0.143..0.143 rows=1 loops=1)
+  ->  Hash Join  (cost=5.00..952849.00 rows=4512 width=45) (actual time=0.113..0.135 rows=4 loops=1)
+        Hash Cond: (mc.company_type_id = ct.id)
+        ->  Nested Loop  (cost=0.00..939309.00 rows=18047 width=49) (actual time=0.036..0.112 rows=78 loops=1)
+              ->  Nested Loop  (cost=0.00..852560.00 rows=6673 width=29) (actual time=0.029..0.053 rows=6 loops=1)
+                    ->  Nested Loop  (cost=0.00..828134.00 rows=12213 width=4) (actual time=0.017..0.021 rows=10 loops=1)
+                          ->  Seq Scan on info_type it  (cost=0.00..113.00 rows=1 width=4) (actual time=0.010..0.011 rows=1 loops=1)
+                                Filter: ((info)::text = 'bottom 10 rank'::text)
+                                Rows Removed by Filter: 112
+                          ->  Index Scan using info_type_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.00..552014.00 rows=276007 width=8) (actual time=0.006..0.008 rows=10 loops=1)
+                                Index Cond: (info_type_id = it.id)
+                    ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=25) (actual time=0.003..0.003 rows=1 loops=10)
+                          Index Cond: (id = mi_idx.movie_id)
+                          Filter: (production_year > 2000)
+                          Rows Removed by Filter: 0
+              ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.00..10.00 rows=3 width=32) (actual time=0.004..0.008 rows=13 loops=6)
+                    Index Cond: (movie_id = t.id)
+                    Filter: (note !~~ '%(as Metro-Goldwyn-Mayer Pictures)%'::text)
+                    Rows Removed by Filter: 2
+        ->  Hash  (cost=4.00..4.00 rows=1 width=4) (actual time=0.006..0.006 rows=1 loops=1)
+              Buckets: 1024  Batches: 1  Memory Usage: 9kB
+              ->  Seq Scan on company_type ct  (cost=0.00..4.00 rows=1 width=4) (actual time=0.003..0.004 rows=1 loops=1)
+                    Filter: ((kind)::text = 'production companies'::text)
+                    Rows Removed by Filter: 3
+Planning time: 0.791 ms
+Execution time: 0.215 ms

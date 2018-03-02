@@ -1,0 +1,41 @@
+Aggregate  (cost=282928.61..282928.62 rows=1 width=64) (actual time=1833.067..1833.067 rows=1 loops=1)
+  ->  Nested Loop  (cost=41297.21..282917.65 rows=2193 width=33) (actual time=353.590..1780.030 rows=249455 loops=1)
+        Join Filter: (an.person_id = n.id)
+        ->  Hash Join  (cost=41296.78..281892.64 rows=2193 width=41) (actual time=353.572..1360.487 rows=249455 loops=1)
+              Hash Cond: (mc.company_id = cn.id)
+              ->  Hash Join  (cost=34303.78..244301.55 rows=2423618 width=45) (actual time=308.273..1267.944 rows=317940 loops=1)
+                    Hash Cond: (ci.person_id = an.person_id)
+                    ->  Nested Loop  (cost=2627.56..170144.94 rows=239584 width=25) (actual time=8.596..890.581 rows=239584 loops=1)
+                          Join Filter: (t.id = ci.movie_id)
+                          ->  Nested Loop  (cost=2627.00..153201.47 rows=8661 width=33) (actual time=8.583..725.305 rows=8661 loops=1)
+                                Join Filter: (t.id = mc.movie_id)
+                                ->  Nested Loop  (cost=2626.57..149954.63 rows=5385 width=25) (actual time=8.485..711.801 rows=5385 loops=1)
+                                      ->  Hash Join  (cost=2626.14..129433.75 rows=41840 width=4) (actual time=8.468..620.917 rows=41840 loops=1)
+                                            Hash Cond: (mk.keyword_id = k.id)
+                                            ->  Seq Scan on movie_keyword mk  (cost=0.00..69693.30 rows=4523930 width=8) (actual time=0.010..285.646 rows=4523930 loops=1)
+                                            ->  Hash  (cost=2626.12..2626.12 rows=1 width=4) (actual time=8.425..8.425 rows=1 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                  ->  Seq Scan on keyword k  (cost=0.00..2626.12 rows=1 width=4) (actual time=0.410..8.424 rows=1 loops=1)
+                                                        Filter: (keyword = 'character-name-in-title'::text)
+                                                        Rows Removed by Filter: 134169
+                                      ->  Index Scan using title_pkey on title t  (cost=0.43..0.49 rows=1 width=21) (actual time=0.002..0.002 rows=0 loops=41840)
+                                            Index Cond: (id = mk.movie_id)
+                                            Filter: ((episode_nr >= 5) AND (episode_nr < 100))
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.54 rows=5 width=8) (actual time=0.002..0.002 rows=2 loops=5385)
+                                      Index Cond: (movie_id = mk.movie_id)
+                          ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..1.51 rows=36 width=8) (actual time=0.002..0.015 rows=28 loops=8661)
+                                Index Cond: (movie_id = mk.movie_id)
+                    ->  Hash  (cost=20409.43..20409.43 rows=901343 width=20) (actual time=298.525..298.525 rows=901343 loops=1)
+                          Buckets: 1048576  Batches: 1  Memory Usage: 55917kB
+                          ->  Seq Scan on aka_name an  (cost=0.00..20409.43 rows=901343 width=20) (actual time=0.008..116.298 rows=901343 loops=1)
+              ->  Hash  (cost=5932.46..5932.46 rows=84843 width=4) (actual time=44.347..44.347 rows=84843 loops=1)
+                    Buckets: 131072  Batches: 1  Memory Usage: 4007kB
+                    ->  Seq Scan on company_name cn  (cost=0.00..5932.46 rows=84843 width=4) (actual time=0.009..31.105 rows=84843 loops=1)
+                          Filter: ((country_code)::text = '[us]'::text)
+                          Rows Removed by Filter: 150154
+        ->  Index Only Scan using name_pkey on name n  (cost=0.43..0.45 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=249455)
+              Index Cond: (id = ci.person_id)
+              Heap Fetches: 249455
+Planning time: 3.194 ms
+Execution time: 1833.365 ms

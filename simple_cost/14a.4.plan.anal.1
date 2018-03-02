@@ -1,0 +1,43 @@
+Aggregate  (cost=289160.00..289161.00 rows=1 width=64) (actual time=243.924..243.924 rows=1 loops=1)
+  ->  Nested Loop  (cost=122.00..289160.00 rows=1 width=22) (actual time=3.292..243.692 rows=761 loops=1)
+        ->  Hash Join  (cost=122.00..289154.00 rows=2 width=26) (actual time=3.289..242.737 rows=878 loops=1)
+              Hash Cond: (mi_idx.info_type_id = it2.id)
+              ->  Nested Loop  (cost=8.00..286998.00 rows=2060 width=30) (actual time=3.052..242.333 rows=2620 loops=1)
+                    ->  Nested Loop  (cost=8.00..231012.00 rows=651 width=38) (actual time=3.029..143.312 rows=3403 loops=1)
+                          ->  Hash Join  (cost=8.00..213318.00 rows=1966 width=25) (actual time=3.020..135.819 rows=1966 loops=1)
+                                Hash Cond: (t.kind_id = kt.id)
+                                ->  Nested Loop  (cost=0.00..211097.00 rows=2582 width=29) (actual time=0.845..135.281 rows=2582 loops=1)
+                                      ->  Nested Loop  (cost=0.00..136915.00 rows=37091 width=4) (actual time=0.796..45.186 rows=37091 loops=1)
+                                            ->  Seq Scan on keyword k  (cost=0.00..134170.00 rows=3 width=4) (actual time=0.788..15.987 rows=3 loops=1)
+                                                  Filter: (keyword = ANY ('{murder,murder-in-title,blood,violence}'::text[]))
+                                                  Rows Removed by Filter: 134167
+                                            ->  Index Scan using keyword_id_movie_keyword on movie_keyword mk  (cost=0.00..610.00 rows=305 width=8) (actual time=0.007..8.279 rows=12364 loops=3)
+                                                  Index Cond: (keyword_id = k.id)
+                                      ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=25) (actual time=0.002..0.002 rows=0 loops=37091)
+                                            Index Cond: (id = mk.movie_id)
+                                            Filter: (production_year > 2010)
+                                            Rows Removed by Filter: 1
+                                ->  Hash  (cost=7.00..7.00 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+                                      Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                      ->  Seq Scan on kind_type kt  (cost=0.00..7.00 rows=1 width=4) (actual time=0.002..0.003 rows=1 loops=1)
+                                            Filter: ((kind)::text = 'movie'::text)
+                                            Rows Removed by Filter: 6
+                          ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.00..6.00 rows=3 width=13) (actual time=0.003..0.003 rows=2 loops=1966)
+                                Index Cond: (movie_id = t.id)
+                                Filter: (info < '8.5'::text)
+                                Rows Removed by Filter: 0
+                    ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.00..84.00 rows=2 width=8) (actual time=0.024..0.029 rows=1 loops=3403)
+                          Index Cond: (movie_id = t.id)
+                          Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German,USA,American}'::text[]))
+                          Rows Removed by Filter: 70
+              ->  Hash  (cost=113.00..113.00 rows=1 width=4) (actual time=0.012..0.012 rows=1 loops=1)
+                    Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                    ->  Seq Scan on info_type it2  (cost=0.00..113.00 rows=1 width=4) (actual time=0.011..0.012 rows=1 loops=1)
+                          Filter: ((info)::text = 'rating'::text)
+                          Rows Removed by Filter: 112
+        ->  Index Scan using info_type_pkey on info_type it1  (cost=0.00..2.00 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=878)
+              Index Cond: (id = mi.info_type_id)
+              Filter: ((info)::text = 'countries'::text)
+              Rows Removed by Filter: 0
+Planning time: 2.999 ms
+Execution time: 243.985 ms

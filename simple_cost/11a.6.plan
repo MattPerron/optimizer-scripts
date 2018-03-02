@@ -1,0 +1,33 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Merge Join
+                          Merge Cond: (mc.company_type_id = ct.id)
+                          ->  Sort
+                                Sort Key: mc.company_type_id
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Nested Loop
+                                                  ->  Seq Scan on link_type lt
+                                                        Filter: ((link)::text ~~ '%follow%'::text)
+                                                  ->  Index Scan using link_type_id_movie_link on movie_link ml
+                                                        Index Cond: (link_type_id = lt.id)
+                                            ->  Index Scan using title_pkey on title t
+                                                  Index Cond: (id = ml.movie_id)
+                                                  Filter: ((production_year >= 1950) AND (production_year <= 2000))
+                                      ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                            Index Cond: (movie_id = ml.movie_id)
+                                            Filter: (note IS NULL)
+                          ->  Sort
+                                Sort Key: ct.id
+                                ->  Seq Scan on company_type ct
+                                      Filter: ((kind)::text = 'production companies'::text)
+                    ->  Index Scan using company_name_pkey on company_name cn
+                          Index Cond: (id = mc.company_id)
+                          Filter: (((country_code)::text <> '[pl]'::text) AND ((name ~~ '%Film%'::text) OR (name ~~ '%Warner%'::text)))
+              ->  Index Scan using movie_id_movie_keyword on movie_keyword mk
+                    Index Cond: (movie_id = ml.movie_id)
+        ->  Index Scan using keyword_pkey on keyword k
+              Index Cond: (id = mk.keyword_id)
+              Filter: (keyword = 'sequel'::text)
