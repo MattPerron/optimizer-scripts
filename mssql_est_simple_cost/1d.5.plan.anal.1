@@ -1,24 +1,30 @@
-Aggregate  (cost=828408.00..828409.00 rows=1 width=68) (actual time=0.198..0.198 rows=1 loops=1)
-  ->  Nested Loop  (cost=0.00..828408.00 rows=4 width=45) (actual time=0.147..0.190 rows=4 loops=1)
-        ->  Nested Loop  (cost=0.00..828232.00 rows=78 width=49) (actual time=0.038..0.119 rows=78 loops=1)
-              ->  Nested Loop  (cost=0.00..828154.00 rows=6 width=29) (actual time=0.028..0.052 rows=6 loops=1)
-                    ->  Nested Loop  (cost=0.00..828134.00 rows=10 width=4) (actual time=0.017..0.021 rows=10 loops=1)
-                          ->  Seq Scan on info_type it  (cost=0.00..113.00 rows=1 width=4) (actual time=0.010..0.011 rows=1 loops=1)
-                                Filter: ((info)::text = 'bottom 10 rank'::text)
-                                Rows Removed by Filter: 112
-                          ->  Index Scan using info_type_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.00..552014.00 rows=276007 width=8) (actual time=0.006..0.008 rows=10 loops=1)
-                                Index Cond: (info_type_id = it.id)
-                    ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=25) (actual time=0.003..0.003 rows=1 loops=10)
-                          Index Cond: (id = mi_idx.movie_id)
-                          Filter: (production_year > 2000)
-                          Rows Removed by Filter: 0
-              ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.00..10.00 rows=3 width=32) (actual time=0.005..0.010 rows=13 loops=6)
-                    Index Cond: (movie_id = t.id)
-                    Filter: (note !~~ '%(as Metro-Goldwyn-Mayer Pictures)%'::text)
-                    Rows Removed by Filter: 2
-        ->  Index Scan using company_type_pkey on company_type ct  (cost=0.00..2.00 rows=1 width=4) (actual time=0.001..0.001 rows=0 loops=78)
-              Index Cond: (id = mc.company_type_id)
-              Filter: ((kind)::text = 'production companies'::text)
-              Rows Removed by Filter: 1
-Planning time: 0.795 ms
-Execution time: 0.259 ms
+Aggregate  (cost=3426548.00..3426549.00 rows=1 width=68) (actual time=3.733..3.733 rows=1 loops=1)
+  ->  Merge Join  (cost=3379461.00..3426548.00 rows=94174 width=45) (actual time=3.721..3.723 rows=4 loops=1)
+        Merge Cond: (mc.company_type_id = ct.id)
+        ->  Sort  (cost=3379457.00..3379457.00 rows=188347 width=49) (actual time=3.697..3.700 rows=78 loops=1)
+              Sort Key: mc.company_type_id
+              Sort Method: quicksort  Memory: 34kB
+              ->  Nested Loop  (cost=0.00..3379457.00 rows=188347 width=49) (actual time=1.859..3.676 rows=78 loops=1)
+                    ->  Nested Loop  (cost=0.00..1380148.00 rows=153793 width=29) (actual time=0.028..0.069 rows=6 loops=1)
+                          ->  Nested Loop  (cost=0.00..828134.00 rows=276007 width=4) (actual time=0.015..0.019 rows=10 loops=1)
+                                ->  Seq Scan on info_type it  (cost=0.00..113.00 rows=1 width=4) (actual time=0.011..0.012 rows=1 loops=1)
+                                      Filter: ((info)::text = 'bottom 10 rank'::text)
+                                      Rows Removed by Filter: 112
+                                ->  Index Scan using info_type_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.00..552014.00 rows=276007 width=8) (actual time=0.003..0.005 rows=10 loops=1)
+                                      Index Cond: (info_type_id = it.id)
+                          ->  Index Scan using title_pkey on title t  (cost=0.00..2.00 rows=1 width=25) (actual time=0.005..0.005 rows=1 loops=10)
+                                Index Cond: (id = mi_idx.movie_id)
+                                Filter: (production_year > 2000)
+                                Rows Removed by Filter: 0
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.00..10.00 rows=3 width=32) (actual time=0.594..0.600 rows=13 loops=6)
+                          Index Cond: (movie_id = t.id)
+                          Filter: (note !~~ '%(as Metro-Goldwyn-Mayer Pictures)%'::text)
+                          Rows Removed by Filter: 2
+        ->  Sort  (cost=4.00..4.00 rows=1 width=4) (actual time=0.014..0.014 rows=1 loops=1)
+              Sort Key: ct.id
+              Sort Method: quicksort  Memory: 25kB
+              ->  Seq Scan on company_type ct  (cost=0.00..4.00 rows=1 width=4) (actual time=0.002..0.003 rows=1 loops=1)
+                    Filter: ((kind)::text = 'production companies'::text)
+                    Rows Removed by Filter: 3
+Planning time: 0.789 ms
+Execution time: 3.768 ms

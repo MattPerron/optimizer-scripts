@@ -2,54 +2,41 @@ Aggregate
   ->  Nested Loop
         ->  Nested Loop
               ->  Nested Loop
-                    ->  Merge Join
-                          Merge Cond: (cc.status_id = cct2.id)
-                          ->  Sort
-                                Sort Key: cc.status_id
-                                ->  Merge Join
-                                      Merge Cond: (it2.id = mi_idx.info_type_id)
-                                      ->  Sort
-                                            Sort Key: it2.id
-                                            ->  Seq Scan on info_type it2
-                                                  Filter: ((info)::text = 'rating'::text)
-                                      ->  Sort
-                                            Sort Key: mi_idx.info_type_id
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
                                             ->  Nested Loop
-                                                  ->  Hash Join
-                                                        Hash Cond: (t.kind_id = kt.id)
+                                                  ->  Nested Loop
                                                         ->  Nested Loop
-                                                              ->  Merge Join
-                                                                    Merge Cond: (cct1.id = cc.subject_id)
-                                                                    ->  Sort
-                                                                          Sort Key: cct1.id
-                                                                          ->  Seq Scan on comp_cast_type cct1
-                                                                                Filter: ((kind)::text = 'cast'::text)
-                                                                    ->  Sort
-                                                                          Sort Key: cc.subject_id
-                                                                          ->  Nested Loop
-                                                                                ->  Nested Loop
-                                                                                      ->  Seq Scan on keyword k
-                                                                                            Filter: (keyword = ANY ('{superhero,marvel-comics,based-on-comic,tv-special,fight,violence,magnet,web,claw,laser}'::text[]))
-                                                                                      ->  Index Scan using keyword_id_movie_keyword on movie_keyword mk
-                                                                                            Index Cond: (keyword_id = k.id)
-                                                                                ->  Index Scan using movie_id_complete_cast on complete_cast cc
-                                                                                      Index Cond: (movie_id = mk.movie_id)
+                                                              ->  Nested Loop
+                                                                    ->  Seq Scan on keyword k
+                                                                          Filter: (keyword = ANY ('{superhero,marvel-comics,based-on-comic,tv-special,fight,violence,magnet,web,claw,laser}'::text[]))
+                                                                    ->  Index Scan using keyword_id_movie_keyword on movie_keyword mk
+                                                                          Index Cond: (keyword_id = k.id)
                                                               ->  Index Scan using title_pkey on title t
                                                                     Index Cond: (id = mk.movie_id)
                                                                     Filter: (production_year > 2000)
-                                                        ->  Hash
-                                                              ->  Seq Scan on kind_type kt
-                                                                    Filter: ((kind)::text = 'movie'::text)
-                                                  ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx
+                                                        ->  Index Scan using kind_type_pkey on kind_type kt
+                                                              Index Cond: (id = t.kind_id)
+                                                              Filter: ((kind)::text = 'movie'::text)
+                                                  ->  Index Scan using movie_id_complete_cast on complete_cast cc
                                                         Index Cond: (movie_id = t.id)
-                          ->  Sort
-                                Sort Key: cct2.id
-                                ->  Seq Scan on comp_cast_type cct2
-                                      Filter: ((kind)::text ~~ '%complete%'::text)
-                    ->  Index Scan using movie_id_cast_info on cast_info ci
-                          Index Cond: (movie_id = t.id)
-              ->  Index Scan using char_name_pkey on char_name chn
-                    Index Cond: (id = ci.person_role_id)
-                    Filter: ((name IS NOT NULL) AND ((name ~~ '%man%'::text) OR (name ~~ '%Man%'::text)))
-        ->  Index Only Scan using name_pkey on name n
-              Index Cond: (id = ci.person_id)
+                                            ->  Index Scan using comp_cast_type_pkey on comp_cast_type cct1
+                                                  Index Cond: (id = cc.subject_id)
+                                                  Filter: ((kind)::text = 'cast'::text)
+                                      ->  Index Scan using comp_cast_type_pkey on comp_cast_type cct2
+                                            Index Cond: (id = cc.status_id)
+                                            Filter: ((kind)::text ~~ '%complete%'::text)
+                                ->  Index Scan using movie_id_cast_info on cast_info ci
+                                      Index Cond: (movie_id = t.id)
+                          ->  Index Scan using char_name_pkey on char_name chn
+                                Index Cond: (id = ci.person_role_id)
+                                Filter: ((name IS NOT NULL) AND ((name ~~ '%man%'::text) OR (name ~~ '%Man%'::text)))
+                    ->  Index Only Scan using name_pkey on name n
+                          Index Cond: (id = ci.person_id)
+              ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx
+                    Index Cond: (movie_id = t.id)
+        ->  Index Scan using info_type_pkey on info_type it2
+              Index Cond: (id = mi_idx.info_type_id)
+              Filter: ((info)::text = 'rating'::text)

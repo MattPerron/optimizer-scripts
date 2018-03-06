@@ -2,44 +2,39 @@ Aggregate
   ->  Nested Loop
         ->  Nested Loop
               ->  Nested Loop
-                    ->  Hash Join
-                          Hash Cond: (cc.subject_id = cct1.id)
-                          ->  Hash Join
-                                Hash Cond: (cc.status_id = cct2.id)
+                    ->  Nested Loop
+                          ->  Nested Loop
                                 ->  Nested Loop
                                       ->  Nested Loop
-                                            ->  Merge Join
-                                                  Merge Cond: (ct.id = mc.company_type_id)
-                                                  ->  Sort
-                                                        Sort Key: ct.id
-                                                        ->  Seq Scan on company_type ct
-                                                              Filter: ((kind)::text = 'production companies'::text)
-                                                  ->  Sort
-                                                        Sort Key: mc.company_type_id
+                                            ->  Hash Join
+                                                  Hash Cond: (mc.company_type_id = ct.id)
+                                                  ->  Nested Loop
                                                         ->  Nested Loop
                                                               ->  Nested Loop
-                                                                    ->  Nested Loop
-                                                                          ->  Seq Scan on link_type lt
-                                                                                Filter: ((link)::text ~~ '%follow%'::text)
-                                                                          ->  Index Scan using link_type_id_movie_link on movie_link ml
-                                                                                Index Cond: (link_type_id = lt.id)
-                                                                    ->  Index Scan using title_pkey on title t
-                                                                          Index Cond: (id = ml.movie_id)
-                                                                          Filter: (production_year = 1998)
-                                                              ->  Index Scan using movie_id_movie_companies on movie_companies mc
-                                                                    Index Cond: (movie_id = ml.movie_id)
-                                                                    Filter: (note IS NULL)
+                                                                    ->  Seq Scan on link_type lt
+                                                                          Filter: ((link)::text ~~ '%follow%'::text)
+                                                                    ->  Index Scan using link_type_id_movie_link on movie_link ml
+                                                                          Index Cond: (link_type_id = lt.id)
+                                                              ->  Index Scan using title_pkey on title t
+                                                                    Index Cond: (id = ml.movie_id)
+                                                                    Filter: (production_year = 1998)
+                                                        ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                                              Index Cond: (movie_id = ml.movie_id)
+                                                              Filter: (note IS NULL)
+                                                  ->  Hash
+                                                        ->  Seq Scan on company_type ct
+                                                              Filter: ((kind)::text = 'production companies'::text)
                                             ->  Index Scan using company_name_pkey on company_name cn
                                                   Index Cond: (id = mc.company_id)
                                                   Filter: (((country_code)::text <> '[pl]'::text) AND ((name ~~ '%Film%'::text) OR (name ~~ '%Warner%'::text)))
                                       ->  Index Scan using movie_id_complete_cast on complete_cast cc
                                             Index Cond: (movie_id = ml.movie_id)
-                                ->  Hash
-                                      ->  Seq Scan on comp_cast_type cct2
-                                            Filter: ((kind)::text = 'complete'::text)
-                          ->  Hash
-                                ->  Seq Scan on comp_cast_type cct1
-                                      Filter: ((kind)::text = ANY ('{cast,crew}'::text[]))
+                                ->  Index Scan using comp_cast_type_pkey on comp_cast_type cct2
+                                      Index Cond: (id = cc.status_id)
+                                      Filter: ((kind)::text = 'complete'::text)
+                          ->  Index Scan using comp_cast_type_pkey on comp_cast_type cct1
+                                Index Cond: (id = cc.subject_id)
+                                Filter: ((kind)::text = ANY ('{cast,crew}'::text[]))
                     ->  Index Scan using movie_id_movie_keyword on movie_keyword mk
                           Index Cond: (movie_id = ml.movie_id)
               ->  Index Scan using keyword_pkey on keyword k
