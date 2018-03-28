@@ -1,0 +1,41 @@
+Aggregate  (cost=12048.94..12048.95 rows=1 width=64) (actual time=6628.843..6628.843 rows=1 loops=1)
+  ->  Nested Loop  (cost=23.11..12048.94 rows=1 width=111) (actual time=0.163..6231.069 rows=68185 loops=1)
+        Join Filter: (n.id = an.person_id)
+        ->  Nested Loop  (cost=22.68..12048.44 rows=1 width=123) (actual time=0.158..6062.944 rows=40157 loops=1)
+              Join Filter: (pi.info_type_id = it.id)
+              ->  Seq Scan on info_type it  (cost=0.00..2.41 rows=1 width=4) (actual time=0.008..0.015 rows=1 loops=1)
+                    Filter: ((info)::text = 'mini biography'::text)
+                    Rows Removed by Filter: 112
+              ->  Nested Loop  (cost=22.68..12045.64 rows=31 width=127) (actual time=0.149..6056.372 rows=40157 loops=1)
+                    Join Filter: (n.id = pi.person_id)
+                    ->  Nested Loop  (cost=22.25..10702.55 rows=1515 width=23) (actual time=0.044..5060.289 rows=150772 loops=1)
+                          ->  Nested Loop  (cost=21.82..4408.67 rows=13454 width=4) (actual time=0.034..1304.853 rows=1097209 loops=1)
+                                ->  Nested Loop  (cost=21.25..3506.96 rows=362 width=8) (actual time=0.026..103.911 rows=14194 loops=1)
+                                      ->  Hash Join  (cost=20.82..862.13 rows=591 width=4) (actual time=0.018..11.676 rows=21505 loops=1)
+                                            Hash Cond: (ml.link_type_id = lt.id)
+                                            ->  Seq Scan on movie_link ml  (cost=0.00..462.97 rows=29997 width=8) (actual time=0.005..3.725 rows=29997 loops=1)
+                                            ->  Hash  (cost=20.65..20.65 rows=14 width=4) (actual time=0.009..0.009 rows=4 loops=1)
+                                                  Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                  ->  Seq Scan on link_type lt  (cost=0.00..20.65 rows=14 width=4) (actual time=0.004..0.007 rows=4 loops=1)
+                                                        Filter: ((link)::text = ANY ('{references,"referenced in",features,"featured in"}'::text[]))
+                                                        Rows Removed by Filter: 14
+                                      ->  Index Scan using title_pkey on title t  (cost=0.43..4.48 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=21505)
+                                            Index Cond: (id = ml.linked_movie_id)
+                                            Filter: ((production_year >= 1980) AND (production_year <= 2010))
+                                            Rows Removed by Filter: 0
+                                ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..2.12 rows=37 width=8) (actual time=0.007..0.076 rows=77 loops=14194)
+                                      Index Cond: (movie_id = t.id)
+                          ->  Index Scan using name_pkey on name n  (cost=0.43..0.47 rows=1 width=19) (actual time=0.003..0.003 rows=0 loops=1097209)
+                                Index Cond: (id = ci.person_id)
+                                Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'A%'::text))))
+                                Rows Removed by Filter: 1
+                    ->  Index Scan using person_id_person_info on person_info pi  (cost=0.43..0.87 rows=1 width=104) (actual time=0.005..0.006 rows=0 loops=150772)
+                          Index Cond: (person_id = ci.person_id)
+                          Filter: (note IS NOT NULL)
+                          Rows Removed by Filter: 20
+        ->  Index Scan using person_id_aka_name on aka_name an  (cost=0.42..0.47 rows=2 width=4) (actual time=0.003..0.004 rows=2 loops=40157)
+              Index Cond: (person_id = ci.person_id)
+              Filter: ((name IS NOT NULL) AND ((name ~~ '%a%'::text) OR (name ~~ 'A%'::text)))
+              Rows Removed by Filter: 1
+Planning time: 3.436 ms
+Execution time: 6628.905 ms

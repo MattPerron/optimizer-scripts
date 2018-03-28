@@ -1,19 +1,21 @@
 Aggregate
   ->  Nested Loop
         Join Filter: (mc.movie_id = t.id)
-        ->  Nested Loop
+        ->  Hash Join
+              Hash Cond: (mc.movie_id = mi_idx.movie_id)
               ->  Nested Loop
-                    ->  Hash Join
-                          Hash Cond: (mi_idx.info_type_id = it.id)
-                          ->  Seq Scan on movie_info_idx mi_idx
-                          ->  Hash
-                                ->  Seq Scan on info_type it
-                                      Filter: ((info)::text = 'top 250 rank'::text)
-                    ->  Index Scan using movie_id_movie_companies on movie_companies mc
-                          Index Cond: (movie_id = mi_idx.movie_id)
+                    ->  Seq Scan on company_type ct
+                          Filter: ((kind)::text = 'production companies'::text)
+                    ->  Index Scan using company_type_id_movie_companies on movie_companies mc
+                          Index Cond: (company_type_id = ct.id)
                           Filter: ((note !~~ '%(as Metro-Goldwyn-Mayer Pictures)%'::text) AND ((note ~~ '%(co-production)%'::text) OR (note ~~ '%(presents)%'::text)))
-              ->  Index Scan using company_type_pkey on company_type ct
-                    Index Cond: (id = mc.company_type_id)
-                    Filter: ((kind)::text = 'production companies'::text)
+              ->  Hash
+                    ->  Nested Loop
+                          ->  Seq Scan on info_type it
+                                Filter: ((info)::text = 'top 250 rank'::text)
+                          ->  Bitmap Heap Scan on movie_info_idx mi_idx
+                                Recheck Cond: (info_type_id = it.id)
+                                ->  Bitmap Index Scan on info_type_id_movie_info_idx
+                                      Index Cond: (info_type_id = it.id)
         ->  Index Scan using title_pkey on title t
               Index Cond: (id = mi_idx.movie_id)

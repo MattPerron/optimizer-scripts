@@ -1,0 +1,41 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (t.id = mi.movie_id)
+              ->  Nested Loop
+                    ->  Nested Loop
+                          Join Filter: (t.id = mc.movie_id)
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      Join Filter: (n.id = an.person_id)
+                                      ->  Nested Loop
+                                            ->  Hash Join
+                                                  Hash Cond: (ci.person_id = n.id)
+                                                  ->  Nested Loop
+                                                        ->  Seq Scan on role_type rt
+                                                              Filter: ((role)::text = 'actress'::text)
+                                                        ->  Index Scan using role_id_cast_info on cast_info ci
+                                                              Index Cond: (role_id = rt.id)
+                                                              Filter: (note = ANY ('{(voice),"(voice: Japanese version)","(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                                  ->  Hash
+                                                        ->  Seq Scan on name n
+                                                              Filter: ((name ~~ '%Ang%'::text) AND ((gender)::text = 'f'::text))
+                                            ->  Index Scan using title_pkey on title t
+                                                  Index Cond: (id = ci.movie_id)
+                                                  Filter: ((production_year >= 2005) AND (production_year <= 2009))
+                                      ->  Index Only Scan using person_id_aka_name on aka_name an
+                                            Index Cond: (person_id = ci.person_id)
+                                ->  Index Only Scan using char_name_pkey on char_name chn
+                                      Index Cond: (id = ci.person_role_id)
+                          ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                Index Cond: (movie_id = ci.movie_id)
+                                Filter: ((note IS NOT NULL) AND ((note ~~ '%(USA)%'::text) OR (note ~~ '%(worldwide)%'::text)))
+                    ->  Index Scan using company_name_pkey on company_name cn
+                          Index Cond: (id = mc.company_id)
+                          Filter: ((country_code)::text = '[us]'::text)
+              ->  Index Scan using movie_id_movie_info on movie_info mi
+                    Index Cond: (movie_id = ci.movie_id)
+                    Filter: ((info IS NOT NULL) AND ((info ~~ 'Japan:%200%'::text) OR (info ~~ 'USA:%200%'::text)))
+        ->  Index Scan using info_type_pkey on info_type it
+              Index Cond: (id = mi.info_type_id)
+              Filter: ((info)::text = 'release dates'::text)

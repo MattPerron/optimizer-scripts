@@ -1,27 +1,26 @@
 Aggregate
-  ->  Hash Join
-        Hash Cond: (mc.company_id = cn.id)
+  ->  Nested Loop
         ->  Nested Loop
-              ->  Hash Join
-                    Hash Cond: (ci.person_id = n.id)
+              Join Filter: (t.id = ci.movie_id)
+              ->  Nested Loop
                     ->  Nested Loop
-                          Join Filter: (t.id = ci.movie_id)
                           ->  Nested Loop
-                                ->  Hash Join
-                                      Hash Cond: (mk.keyword_id = k.id)
-                                      ->  Seq Scan on movie_keyword mk
-                                      ->  Hash
-                                            ->  Seq Scan on keyword k
-                                                  Filter: (keyword = 'character-name-in-title'::text)
-                                ->  Index Only Scan using title_pkey on title t
-                                      Index Cond: (id = mk.movie_id)
-                          ->  Index Scan using movie_id_cast_info on cast_info ci
-                                Index Cond: (movie_id = mk.movie_id)
-                    ->  Hash
-                          ->  Seq Scan on name n
-                                Filter: (name ~~ 'B%'::text)
-              ->  Index Scan using movie_id_movie_companies on movie_companies mc
-                    Index Cond: (movie_id = ci.movie_id)
-        ->  Hash
-              ->  Seq Scan on company_name cn
-                    Filter: ((country_code)::text = '[us]'::text)
+                                ->  Nested Loop
+                                      ->  Seq Scan on keyword k
+                                            Filter: (keyword = 'character-name-in-title'::text)
+                                      ->  Bitmap Heap Scan on movie_keyword mk
+                                            Recheck Cond: (keyword_id = k.id)
+                                            ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                  Index Cond: (keyword_id = k.id)
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                      Index Cond: (movie_id = mk.movie_id)
+                          ->  Index Scan using company_name_pkey on company_name cn
+                                Index Cond: (id = mc.company_id)
+                                Filter: ((country_code)::text = '[us]'::text)
+                    ->  Index Only Scan using title_pkey on title t
+                          Index Cond: (id = mk.movie_id)
+              ->  Index Scan using movie_id_cast_info on cast_info ci
+                    Index Cond: (movie_id = mk.movie_id)
+        ->  Index Scan using name_pkey on name n
+              Index Cond: (id = ci.person_id)
+              Filter: (name ~~ 'B%'::text)

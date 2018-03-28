@@ -1,0 +1,30 @@
+Aggregate  (cost=346777.93..346777.94 rows=1 width=96) (actual time=1217.424..1217.424 rows=1 loops=1)
+  ->  Hash Join  (cost=97195.87..108163.24 rows=31815292 width=116) (actual time=1074.781..1216.078 rows=4388 loops=1)
+        Hash Cond: (t1.id = mk.movie_id)
+        ->  Hash Join  (cost=92904.66..103417.15 rows=29995 width=124) (actual time=1026.016..1167.490 rows=29997 loops=1)
+              Hash Cond: (ml.linked_movie_id = t2.id)
+              ->  Hash Join  (cost=18.25..10152.03 rows=29997 width=111) (actual time=0.054..128.683 rows=29997 loops=1)
+                    Hash Cond: (ml.link_type_id = lt.id)
+                    ->  Merge Join  (cost=0.92..9756.37 rows=29997 width=33) (actual time=0.028..122.837 rows=29997 loops=1)
+                          Merge Cond: (ml.movie_id = t1.id)
+                          ->  Index Scan using movie_id_movie_link on movie_link ml  (cost=0.29..959.51 rows=29997 width=12) (actual time=0.014..5.111 rows=29997 loops=1)
+                          ->  Index Scan using title_pkey on title t1  (cost=0.43..110297.12 rows=2528312 width=21) (actual time=0.008..97.896 rows=186175 loops=1)
+                    ->  Hash  (cost=17.10..17.10 rows=18 width=86) (actual time=0.014..0.014 rows=18 loops=1)
+                          Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                          ->  Seq Scan on link_type lt  (cost=0.00..17.10 rows=18 width=86) (actual time=0.007..0.010 rows=18 loops=1)
+              ->  Hash  (cost=61282.51..61282.51 rows=2528312 width=21) (actual time=1017.502..1017.502 rows=2528312 loops=1)
+                    Buckets: 4194304  Batches: 1  Memory Usage: 168637kB
+                    ->  Seq Scan on title t2  (cost=0.00..61282.51 rows=2528312 width=21) (actual time=0.010..363.251 rows=2528312 loops=1)
+        ->  Hash  (cost=3768.21..3768.21 rows=41840 width=4) (actual time=44.752..44.752 rows=41840 loops=1)
+              Buckets: 65536  Batches: 1  Memory Usage: 1983kB
+              ->  Nested Loop  (cost=6.83..3768.21 rows=41840 width=4) (actual time=4.298..38.303 rows=41840 loops=1)
+                    ->  Seq Scan on keyword k  (cost=0.00..2626.12 rows=1 width=4) (actual time=0.441..10.439 rows=1 loops=1)
+                          Filter: (keyword = 'character-name-in-title'::text)
+                          Rows Removed by Filter: 134169
+                    ->  Bitmap Heap Scan on movie_keyword mk  (cost=6.83..1138.99 rows=309 width=8) (actual time=3.855..23.198 rows=41840 loops=1)
+                          Recheck Cond: (keyword_id = k.id)
+                          Heap Blocks: exact=11541
+                          ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..6.75 rows=309 width=0) (actual time=2.487..2.487 rows=41840 loops=1)
+                                Index Cond: (keyword_id = k.id)
+Planning time: 1.167 ms
+Execution time: 1218.291 ms

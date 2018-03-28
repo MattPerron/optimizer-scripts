@@ -1,0 +1,24 @@
+Aggregate  (cost=58049.90..58049.91 rows=1 width=32) (actual time=329.008..329.008 rows=1 loops=1)
+  ->  Nested Loop  (cost=0.86..58049.90 rows=1 width=17) (actual time=329.007..329.007 rows=0 loops=1)
+        Join Filter: (mi.info_type_id = it.id)
+        ->  Nested Loop  (cost=0.86..58046.36 rows=1 width=21) (actual time=329.006..329.006 rows=0 loops=1)
+              ->  Nested Loop  (cost=0.43..58041.61 rows=2 width=25) (actual time=329.006..329.006 rows=0 loops=1)
+                    ->  Nested Loop  (cost=0.00..58000.56 rows=5 width=4) (actual time=329.006..329.006 rows=0 loops=1)
+                          Join Filter: (ct.id = mc.company_type_id)
+                          Rows Removed by Join Filter: 24025
+                          ->  Seq Scan on movie_companies mc  (cost=0.00..57926.93 rows=913 width=8) (actual time=2.796..322.787 rows=24025 loops=1)
+                                Filter: ((note ~~ '%(theatrical)%'::text) AND (note ~~ '%(France)%'::text))
+                                Rows Removed by Filter: 2585104
+                          ->  Materialize  (cost=0.00..18.89 rows=4 width=4) (actual time=0.000..0.000 rows=1 loops=24025)
+                                ->  Seq Scan on company_type ct  (cost=0.00..18.88 rows=4 width=4) (actual time=0.003..0.004 rows=1 loops=1)
+                                      Filter: ((kind)::text = 'production companies'::text)
+                                      Rows Removed by Filter: 3
+                    ->  Index Scan using title_pkey on title t  (cost=0.43..8.21 rows=1 width=21) (never executed)
+                          Index Cond: (id = mc.movie_id)
+                          Filter: (production_year > 2005)
+              ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..2.36 rows=1 width=8) (never executed)
+                    Index Cond: (movie_id = t.id)
+                    Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German}'::text[]))
+        ->  Seq Scan on info_type it  (cost=0.00..2.13 rows=113 width=4) (never executed)
+Planning time: 0.844 ms
+Execution time: 329.037 ms

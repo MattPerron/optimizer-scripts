@@ -1,0 +1,36 @@
+Aggregate  (cost=78855.76..78855.77 rows=1 width=64) (actual time=360.605..360.605 rows=1 loops=1)
+  ->  Nested Loop  (cost=6018.86..78855.76 rows=1 width=33) (actual time=139.925..360.588 rows=6 loops=1)
+        ->  Nested Loop  (cost=6018.71..78855.56 rows=1 width=37) (actual time=139.919..360.572 rows=6 loops=1)
+              ->  Nested Loop  (cost=6018.28..78854.80 rows=1 width=45) (actual time=139.676..360.133 rows=171 loops=1)
+                    ->  Nested Loop  (cost=6017.86..78853.72 rows=1 width=25) (actual time=139.666..359.755 rows=104 loops=1)
+                          Join Filter: (t.id = ci.movie_id)
+                          ->  Nested Loop  (cost=6017.29..78757.62 rows=1 width=25) (actual time=139.649..359.533 rows=4 loops=1)
+                                ->  Hash Join  (cost=6016.86..77097.63 rows=246 width=4) (actual time=25.159..339.097 rows=8495 loops=1)
+                                      Hash Cond: (mc.company_id = cn.id)
+                                      ->  Seq Scan on movie_companies mc  (cost=0.00..70972.58 rows=8569 width=8) (actual time=0.074..311.977 rows=8569 loops=1)
+                                            Filter: ((note ~~ '%(Japan)%'::text) AND (note !~~ '%(USA)%'::text) AND ((note ~~ '%(2006)%'::text) OR (note ~~ '%(2007)%'::text)))
+                                            Rows Removed by Filter: 2600560
+                                      ->  Hash  (cost=5932.46..5932.46 rows=6752 width=4) (actual time=25.069..25.069 rows=6752 loops=1)
+                                            Buckets: 8192  Batches: 1  Memory Usage: 302kB
+                                            ->  Seq Scan on company_name cn  (cost=0.00..5932.46 rows=6752 width=4) (actual time=0.007..24.207 rows=6752 loops=1)
+                                                  Filter: ((country_code)::text = '[jp]'::text)
+                                                  Rows Removed by Filter: 228245
+                                ->  Index Scan using title_pkey on title t  (cost=0.43..6.74 rows=1 width=21) (actual time=0.002..0.002 rows=0 loops=8495)
+                                      Index Cond: (id = mc.movie_id)
+                                      Filter: ((production_year >= 2006) AND (production_year <= 2007) AND ((title ~~ 'One Piece%'::text) OR (title ~~ 'Dragon Ball Z%'::text)))
+                                      Rows Removed by Filter: 1
+                          ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..96.08 rows=1 width=12) (actual time=0.018..0.050 rows=26 loops=4)
+                                Index Cond: (movie_id = mc.movie_id)
+                                Filter: (note = '(voice: English version)'::text)
+                                Rows Removed by Filter: 17
+                    ->  Index Scan using person_id_aka_name on aka_name an  (cost=0.42..1.06 rows=2 width=20) (actual time=0.003..0.003 rows=2 loops=104)
+                          Index Cond: (person_id = ci.person_id)
+              ->  Index Scan using name_pkey on name n  (cost=0.43..0.77 rows=1 width=4) (actual time=0.002..0.002 rows=0 loops=171)
+                    Index Cond: (id = an.person_id)
+                    Filter: ((name ~~ '%Yo%'::text) AND (name !~~ '%Yu%'::text))
+                    Rows Removed by Filter: 1
+        ->  Index Scan using role_type_pkey on role_type rt  (cost=0.15..0.17 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=6)
+              Index Cond: (id = ci.role_id)
+              Filter: ((role)::text = 'actress'::text)
+Planning time: 2.313 ms
+Execution time: 360.680 ms

@@ -1,20 +1,21 @@
 Aggregate
   ->  Nested Loop
         ->  Nested Loop
-              ->  Hash Join
-                    Hash Cond: (mk.keyword_id = k.id)
-                    ->  Merge Join
-                          Merge Cond: (t1.id = ml.movie_id)
-                          ->  Merge Join
-                                Merge Cond: (mk.movie_id = t1.id)
-                                ->  Index Scan using movie_id_movie_keyword on movie_keyword mk
+              Join Filter: (ml.link_type_id = lt.id)
+              ->  Seq Scan on link_type lt
+              ->  Materialize
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Seq Scan on keyword k
+                                            Filter: (keyword = '10,000-mile-club'::text)
+                                      ->  Bitmap Heap Scan on movie_keyword mk
+                                            Recheck Cond: (keyword_id = k.id)
+                                            ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                  Index Cond: (keyword_id = k.id)
                                 ->  Index Scan using title_pkey on title t1
-                          ->  Materialize
-                                ->  Index Scan using movie_id_movie_link on movie_link ml
-                    ->  Hash
-                          ->  Seq Scan on keyword k
-                                Filter: (keyword = '10,000-mile-club'::text)
-              ->  Index Scan using link_type_pkey on link_type lt
-                    Index Cond: (id = ml.link_type_id)
+                                      Index Cond: (id = mk.movie_id)
+                          ->  Index Scan using movie_id_movie_link on movie_link ml
+                                Index Cond: (movie_id = t1.id)
         ->  Index Scan using title_pkey on title t2
               Index Cond: (id = ml.linked_movie_id)

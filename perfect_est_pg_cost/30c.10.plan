@@ -1,0 +1,47 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (mk.keyword_id = k.id)
+        ->  Nested Loop
+              ->  Nested Loop
+                    Join Filter: (it2.id = mi_idx.info_type_id)
+                    ->  Seq Scan on info_type it2
+                          Filter: ((info)::text = 'votes'::text)
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Nested Loop
+                                                  Join Filter: (cc.subject_id = cct1.id)
+                                                  ->  Seq Scan on comp_cast_type cct1
+                                                        Filter: ((kind)::text = 'cast'::text)
+                                                  ->  Nested Loop
+                                                        Join Filter: (cct2.id = cc.status_id)
+                                                        ->  Seq Scan on comp_cast_type cct2
+                                                              Filter: ((kind)::text = 'complete+verified'::text)
+                                                        ->  Hash Join
+                                                              Hash Cond: (mi.movie_id = cc.movie_id)
+                                                              ->  Nested Loop
+                                                                    ->  Seq Scan on info_type it1
+                                                                          Filter: ((info)::text = 'genres'::text)
+                                                                    ->  Bitmap Heap Scan on movie_info mi
+                                                                          Recheck Cond: (info_type_id = it1.id)
+                                                                          Filter: (info = ANY ('{Horror,Action,Sci-Fi,Thriller,Crime,War}'::text[]))
+                                                                          ->  Bitmap Index Scan on info_type_id_movie_info
+                                                                                Index Cond: (info_type_id = it1.id)
+                                                              ->  Hash
+                                                                    ->  Seq Scan on complete_cast cc
+                                            ->  Index Scan using title_pkey on title t
+                                                  Index Cond: (id = mi.movie_id)
+                                      ->  Index Scan using movie_id_cast_info on cast_info ci
+                                            Index Cond: (movie_id = t.id)
+                                            Filter: (note = ANY ('{(writer),"(head writer)","(written by)",(story),"(story editor)"}'::text[]))
+                                ->  Index Scan using name_pkey on name n
+                                      Index Cond: (id = ci.person_id)
+                                      Filter: ((gender)::text = 'm'::text)
+                          ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx
+                                Index Cond: (movie_id = t.id)
+              ->  Index Scan using movie_id_movie_keyword on movie_keyword mk
+                    Index Cond: (movie_id = t.id)
+        ->  Materialize
+              ->  Seq Scan on keyword k
+                    Filter: (keyword = ANY ('{murder,violence,blood,gore,death,female-nudity,hospital}'::text[]))

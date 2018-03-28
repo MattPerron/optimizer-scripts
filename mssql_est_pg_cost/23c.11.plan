@@ -5,28 +5,28 @@ Aggregate
                     ->  Nested Loop
                           ->  Nested Loop
                                 ->  Nested Loop
+                                      Join Filter: (mi.info_type_id = it1.id)
+                                      ->  Seq Scan on info_type it1
+                                            Filter: ((info)::text = 'release dates'::text)
                                       ->  Nested Loop
                                             ->  Hash Join
                                                   Hash Cond: (t.kind_id = kt.id)
-                                                  ->  Nested Loop
-                                                        ->  Hash Join
-                                                              Hash Cond: (cc.status_id = cct1.id)
-                                                              ->  Seq Scan on complete_cast cc
-                                                              ->  Hash
+                                                  ->  Hash Join
+                                                        Hash Cond: (t.id = cc.movie_id)
+                                                        ->  Seq Scan on title t
+                                                              Filter: (production_year > 1990)
+                                                        ->  Hash
+                                                              ->  Nested Loop
+                                                                    Join Filter: (cc.status_id = cct1.id)
                                                                     ->  Seq Scan on comp_cast_type cct1
                                                                           Filter: ((kind)::text = 'complete+verified'::text)
-                                                        ->  Index Scan using title_pkey on title t
-                                                              Index Cond: (id = cc.movie_id)
-                                                              Filter: (production_year > 1990)
+                                                                    ->  Seq Scan on complete_cast cc
                                                   ->  Hash
                                                         ->  Seq Scan on kind_type kt
                                                               Filter: ((kind)::text = ANY ('{movie,"tv movie","video movie","video game"}'::text[]))
                                             ->  Index Scan using movie_id_movie_info on movie_info mi
                                                   Index Cond: (movie_id = t.id)
                                                   Filter: ((info IS NOT NULL) AND (note ~~ '%internet%'::text) AND ((info ~~ 'USA:% 199%'::text) OR (info ~~ 'USA:% 200%'::text)))
-                                      ->  Index Scan using info_type_pkey on info_type it1
-                                            Index Cond: (id = mi.info_type_id)
-                                            Filter: ((info)::text = 'release dates'::text)
                                 ->  Index Scan using movie_id_movie_companies on movie_companies mc
                                       Index Cond: (movie_id = t.id)
                           ->  Index Scan using company_name_pkey on company_name cn

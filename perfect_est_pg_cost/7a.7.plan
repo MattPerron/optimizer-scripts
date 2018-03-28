@@ -1,0 +1,32 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (n.id = an.person_id)
+        ->  Nested Loop
+              ->  Nested Loop
+                    Join Filter: (ml.link_type_id = lt.id)
+                    ->  Seq Scan on link_type lt
+                          Filter: ((link)::text = 'features'::text)
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Seq Scan on info_type it
+                                                  Filter: ((info)::text = 'mini biography'::text)
+                                            ->  Bitmap Heap Scan on person_info pi
+                                                  Recheck Cond: (info_type_id = it.id)
+                                                  Filter: (note = 'Volker Boehm'::text)
+                                                  ->  Bitmap Index Scan on info_type_id_person_info
+                                                        Index Cond: (info_type_id = it.id)
+                                      ->  Index Scan using name_pkey on name n
+                                            Index Cond: (id = pi.person_id)
+                                            Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'B%'::text))))
+                                ->  Index Scan using person_id_cast_info on cast_info ci
+                                      Index Cond: (person_id = n.id)
+                          ->  Index Scan using linked_movie_id_movie_link on movie_link ml
+                                Index Cond: (linked_movie_id = ci.movie_id)
+              ->  Index Scan using title_pkey on title t
+                    Index Cond: (id = ci.movie_id)
+                    Filter: ((production_year >= 1980) AND (production_year <= 1995))
+        ->  Index Scan using person_id_aka_name on aka_name an
+              Index Cond: (person_id = ci.person_id)
+              Filter: (name ~~ '%a%'::text)

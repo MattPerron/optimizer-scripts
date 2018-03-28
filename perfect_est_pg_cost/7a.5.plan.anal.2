@@ -1,0 +1,42 @@
+Aggregate  (cost=57334.83..57334.84 rows=1 width=64) (actual time=77.038..77.038 rows=1 loops=1)
+  ->  Nested Loop  (cost=2492.91..57334.83 rows=1 width=32) (actual time=16.164..77.020 rows=32 loops=1)
+        ->  Nested Loop  (cost=2492.48..57334.37 rows=1 width=23) (actual time=16.154..76.624 rows=151 loops=1)
+              Join Filter: (n.id = an.person_id)
+              ->  Nested Loop  (cost=2492.05..57333.88 rows=1 width=35) (actual time=16.145..76.329 rows=103 loops=1)
+                    Join Filter: (ml.link_type_id = lt.id)
+                    Rows Removed by Join Filter: 241
+                    ->  Seq Scan on link_type lt  (cost=0.00..18.88 rows=1 width=4) (actual time=0.005..0.008 rows=1 loops=1)
+                          Filter: ((link)::text = 'features'::text)
+                          Rows Removed by Filter: 17
+                    ->  Nested Loop  (cost=2492.05..57310.70 rows=344 width=39) (actual time=16.138..76.283 rows=344 loops=1)
+                          ->  Nested Loop  (cost=2491.77..56396.15 rows=2670 width=31) (actual time=15.836..73.057 rows=2670 loops=1)
+                                ->  Nested Loop  (cost=2491.20..56106.39 rows=17 width=23) (actual time=15.824..72.079 rows=17 loops=1)
+                                      ->  Nested Loop  (cost=2490.77..55564.95 rows=64 width=4) (actual time=14.758..71.662 rows=64 loops=1)
+                                            ->  Seq Scan on info_type it  (cost=0.00..2.41 rows=1 width=4) (actual time=0.005..0.014 rows=1 loops=1)
+                                                  Filter: ((info)::text = 'mini biography'::text)
+                                                  Rows Removed by Filter: 112
+                                            ->  Bitmap Heap Scan on person_info pi  (cost=2490.77..55562.45 rows=9 width=8) (actual time=14.750..71.634 rows=64 loops=1)
+                                                  Recheck Cond: (info_type_id = it.id)
+                                                  Filter: (note = 'Volker Boehm'::text)
+                                                  Rows Removed by Filter: 84120
+                                                  Heap Blocks: exact=40387
+                                                  ->  Bitmap Index Scan on info_type_id_person_info  (cost=0.00..2490.77 rows=134712 width=0) (actual time=8.514..8.514 rows=84184 loops=1)
+                                                        Index Cond: (info_type_id = it.id)
+                                      ->  Index Scan using name_pkey on name n  (cost=0.43..8.46 rows=1 width=19) (actual time=0.006..0.006 rows=0 loops=64)
+                                            Index Cond: (id = pi.person_id)
+                                            Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'B%'::text))))
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using person_id_cast_info on cast_info ci  (cost=0.56..11.99 rows=505 width=8) (actual time=0.008..0.036 rows=157 loops=17)
+                                      Index Cond: (person_id = n.id)
+                          ->  Index Scan using linked_movie_id_movie_link on movie_link ml  (cost=0.29..0.32 rows=2 width=8) (actual time=0.001..0.001 rows=0 loops=2670)
+                                Index Cond: (linked_movie_id = ci.movie_id)
+              ->  Index Scan using person_id_aka_name on aka_name an  (cost=0.42..0.47 rows=2 width=4) (actual time=0.002..0.002 rows=1 loops=103)
+                    Index Cond: (person_id = ci.person_id)
+                    Filter: (name ~~ '%a%'::text)
+                    Rows Removed by Filter: 0
+        ->  Index Scan using title_pkey on title t  (cost=0.43..0.46 rows=1 width=21) (actual time=0.002..0.002 rows=0 loops=151)
+              Index Cond: (id = ci.movie_id)
+              Filter: ((production_year >= 1980) AND (production_year <= 1995))
+              Rows Removed by Filter: 1
+Planning time: 3.679 ms
+Execution time: 77.117 ms

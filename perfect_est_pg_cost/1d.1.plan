@@ -1,0 +1,20 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (mc.company_type_id = ct.id)
+              ->  Seq Scan on company_type ct
+                    Filter: ((kind)::text = 'production companies'::text)
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Seq Scan on info_type it
+                                Filter: ((info)::text = 'bottom 10 rank'::text)
+                          ->  Bitmap Heap Scan on movie_info_idx mi_idx
+                                Recheck Cond: (info_type_id = it.id)
+                                ->  Bitmap Index Scan on info_type_id_movie_info_idx
+                                      Index Cond: (info_type_id = it.id)
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                          Index Cond: (movie_id = mi_idx.movie_id)
+                          Filter: (note !~~ '%(as Metro-Goldwyn-Mayer Pictures)%'::text)
+        ->  Index Scan using title_pkey on title t
+              Index Cond: (id = mc.movie_id)
+              Filter: (production_year > 2000)

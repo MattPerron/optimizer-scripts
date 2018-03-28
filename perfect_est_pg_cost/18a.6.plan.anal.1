@@ -1,0 +1,35 @@
+Aggregate  (cost=897064.06..897064.07 rows=1 width=96) (actual time=4428.679..4428.679 rows=1 loops=1)
+  ->  Nested Loop  (cost=118244.94..897060.99 rows=410 width=64) (actual time=2353.863..4428.305 rows=410 loops=1)
+        ->  Nested Loop  (cost=118244.51..896872.54 rows=410 width=59) (actual time=2353.844..4426.204 rows=410 loops=1)
+              Join Filter: (mi.info_type_id = it1.id)
+              Rows Removed by Join Filter: 81998
+              ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.011..0.012 rows=1 loops=1)
+                    Filter: ((info)::text = 'budget'::text)
+                    Rows Removed by Filter: 112
+              ->  Nested Loop  (cost=118244.51..895840.03 rows=82408 width=63) (actual time=2353.818..4421.600 rows=82408 loops=1)
+                    Join Filter: (mi_idx.movie_id = mi.movie_id)
+                    ->  Nested Loop  (cost=118244.08..857711.13 rows=3435 width=13) (actual time=2353.806..4371.186 rows=3435 loops=1)
+                          Join Filter: (mi_idx.info_type_id = it2.id)
+                          Rows Removed by Join Filter: 6875
+                          ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.008..0.010 rows=1 loops=1)
+                                Filter: ((info)::text = 'votes'::text)
+                                Rows Removed by Filter: 112
+                          ->  Nested Loop  (cost=118244.08..857579.84 rows=10310 width=17) (actual time=2353.796..4370.242 rows=10310 loops=1)
+                                ->  Hash Join  (cost=118243.65..854020.74 rows=6719 width=4) (actual time=2353.777..4353.392 rows=6719 loops=1)
+                                      Hash Cond: (ci.person_id = n.id)
+                                      ->  Seq Scan on cast_info ci  (cost=0.00..705738.80 rows=2379271 width=8) (actual time=238.730..3578.443 rows=2379271 loops=1)
+                                            Filter: (note = ANY ('{(producer),"(executive producer)"}'::text[]))
+                                            Rows Removed by Filter: 33865073
+                                      ->  Hash  (cost=118130.38..118130.38 rows=9062 width=4) (actual time=594.266..594.266 rows=9062 loops=1)
+                                            Buckets: 16384  Batches: 1  Memory Usage: 447kB
+                                            ->  Seq Scan on name n  (cost=0.00..118130.38 rows=9062 width=4) (actual time=0.092..592.698 rows=9062 loops=1)
+                                                  Filter: ((name ~~ '%Tim%'::text) AND ((gender)::text = 'm'::text))
+                                                  Rows Removed by Filter: 4158429
+                                ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.43..0.50 rows=3 width=13) (actual time=0.002..0.002 rows=2 loops=6719)
+                                      Index Cond: (movie_id = ci.movie_id)
+                    ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..10.59 rows=41 width=50) (actual time=0.003..0.011 rows=24 loops=3435)
+                          Index Cond: (movie_id = ci.movie_id)
+        ->  Index Scan using title_pkey on title t  (cost=0.43..0.46 rows=1 width=21) (actual time=0.005..0.005 rows=1 loops=410)
+              Index Cond: (id = mi.movie_id)
+Planning time: 2.222 ms
+Execution time: 4428.737 ms

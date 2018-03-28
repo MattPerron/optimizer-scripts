@@ -1,0 +1,40 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Nested Loop
+                    ->  Nested Loop
+                          Join Filter: (t.id = mi.movie_id)
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      Join Filter: (t.kind_id = kt.id)
+                                      ->  Seq Scan on kind_type kt
+                                            Filter: ((kind)::text = 'movie'::text)
+                                      ->  Nested Loop
+                                            ->  Hash Join
+                                                  Hash Cond: (mc.company_type_id = ct.id)
+                                                  ->  Nested Loop
+                                                        ->  Nested Loop
+                                                              Join Filter: (cc.status_id = cct1.id)
+                                                              ->  Seq Scan on comp_cast_type cct1
+                                                                    Filter: ((kind)::text = 'complete+verified'::text)
+                                                              ->  Seq Scan on complete_cast cc
+                                                        ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                                              Index Cond: (movie_id = cc.movie_id)
+                                                  ->  Hash
+                                                        ->  Seq Scan on company_type ct
+                                            ->  Index Scan using title_pkey on title t
+                                                  Index Cond: (id = mc.movie_id)
+                                                  Filter: (production_year > 2000)
+                                ->  Index Scan using company_name_pkey on company_name cn
+                                      Index Cond: (id = mc.company_id)
+                                      Filter: ((country_code)::text = '[us]'::text)
+                          ->  Index Scan using movie_id_movie_info on movie_info mi
+                                Index Cond: (movie_id = mc.movie_id)
+                                Filter: ((info IS NOT NULL) AND (note ~~ '%internet%'::text) AND ((info ~~ 'USA:% 199%'::text) OR (info ~~ 'USA:% 200%'::text)))
+                    ->  Index Scan using info_type_pkey on info_type it1
+                          Index Cond: (id = mi.info_type_id)
+                          Filter: ((info)::text = 'release dates'::text)
+              ->  Index Scan using movie_id_movie_keyword on movie_keyword mk
+                    Index Cond: (movie_id = t.id)
+        ->  Index Only Scan using keyword_pkey on keyword k
+              Index Cond: (id = mk.keyword_id)

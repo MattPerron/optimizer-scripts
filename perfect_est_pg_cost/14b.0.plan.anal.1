@@ -1,0 +1,46 @@
+Aggregate  (cost=4959.67..4959.68 rows=1 width=64) (actual time=80.079..80.079 rows=1 loops=1)
+  ->  Nested Loop  (cost=8.12..4959.66 rows=1 width=22) (actual time=42.495..80.071 rows=1 loops=1)
+        Join Filter: (t.kind_id = kt.id)
+        Rows Removed by Join Filter: 1
+        ->  Nested Loop  (cost=8.12..4936.85 rows=1 width=26) (actual time=4.728..80.063 rows=2 loops=1)
+              Join Filter: (mi_idx.info_type_id = it2.id)
+              Rows Removed by Join Filter: 1
+              ->  Nested Loop  (cost=8.12..4934.43 rows=1 width=30) (actual time=4.710..80.037 rows=3 loops=1)
+                    Join Filter: (t.id = mi_idx.movie_id)
+                    ->  Nested Loop  (cost=7.69..4933.92 rows=1 width=33) (actual time=4.701..79.985 rows=8 loops=1)
+                          Join Filter: (mi.info_type_id = it1.id)
+                          ->  Nested Loop  (cost=7.69..4931.49 rows=1 width=37) (actual time=4.693..79.933 rows=8 loops=1)
+                                Join Filter: (t.id = mi.movie_id)
+                                ->  Nested Loop  (cost=7.26..4929.62 rows=1 width=29) (actual time=4.658..79.662 rows=15 loops=1)
+                                      ->  Nested Loop  (cost=6.83..4896.30 rows=67 width=4) (actual time=4.144..34.558 rows=19528 loops=1)
+                                            ->  Seq Scan on keyword k  (cost=0.00..2626.12 rows=2 width=4) (actual time=0.835..14.302 rows=1 loops=1)
+                                                  Filter: (keyword = ANY ('{murder,murder-in-title}'::text[]))
+                                                  Rows Removed by Filter: 134169
+                                            ->  Bitmap Heap Scan on movie_keyword mk  (cost=6.83..1132.00 rows=309 width=8) (actual time=3.308..18.281 rows=19528 loops=1)
+                                                  Recheck Cond: (keyword_id = k.id)
+                                                  Heap Blocks: exact=12389
+                                                  ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..6.75 rows=309 width=0) (actual time=1.727..1.727 rows=19528 loops=1)
+                                                        Index Cond: (keyword_id = k.id)
+                                      ->  Index Scan using title_pkey on title t  (cost=0.43..0.50 rows=1 width=25) (actual time=0.002..0.002 rows=0 loops=19528)
+                                            Index Cond: (id = mk.movie_id)
+                                            Filter: ((production_year > 2010) AND ((title ~~ '%murder%'::text) OR (title ~~ '%Murder%'::text) OR (title ~~ '%Mord%'::text)))
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..1.84 rows=2 width=8) (actual time=0.016..0.017 rows=1 loops=15)
+                                      Index Cond: (movie_id = mk.movie_id)
+                                      Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German,USA,American}'::text[]))
+                                      Rows Removed by Filter: 12
+                          ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=8)
+                                Filter: ((info)::text = 'countries'::text)
+                                Rows Removed by Filter: 7
+                    ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.43..0.50 rows=1 width=13) (actual time=0.006..0.006 rows=0 loops=8)
+                          Index Cond: (movie_id = mk.movie_id)
+                          Filter: (info > '6.0'::text)
+                          Rows Removed by Filter: 1
+              ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.007..0.008 rows=1 loops=3)
+                    Filter: ((info)::text = 'rating'::text)
+                    Rows Removed by Filter: 104
+        ->  Seq Scan on kind_type kt  (cost=0.00..22.75 rows=5 width=4) (actual time=0.002..0.002 rows=1 loops=2)
+              Filter: ((kind)::text = 'movie'::text)
+              Rows Removed by Filter: 3
+Planning time: 3.077 ms
+Execution time: 80.144 ms

@@ -1,0 +1,32 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (an.person_id = n.id)
+        ->  Nested Loop
+              ->  Nested Loop
+                    Join Filter: (t.id = ci.movie_id)
+                    ->  Hash Join
+                          Hash Cond: (mc.company_id = cn.id)
+                          ->  Nested Loop
+                                Join Filter: (t.id = mc.movie_id)
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Seq Scan on keyword k
+                                                  Filter: (keyword = 'character-name-in-title'::text)
+                                            ->  Bitmap Heap Scan on movie_keyword mk
+                                                  Recheck Cond: (keyword_id = k.id)
+                                                  ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                        Index Cond: (keyword_id = k.id)
+                                      ->  Index Scan using title_pkey on title t
+                                            Index Cond: (id = mk.movie_id)
+                                            Filter: (episode_nr < 100)
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                      Index Cond: (movie_id = mk.movie_id)
+                          ->  Hash
+                                ->  Seq Scan on company_name cn
+                                      Filter: ((country_code)::text = '[us]'::text)
+                    ->  Index Scan using movie_id_cast_info on cast_info ci
+                          Index Cond: (movie_id = mk.movie_id)
+              ->  Index Scan using person_id_aka_name on aka_name an
+                    Index Cond: (person_id = ci.person_id)
+        ->  Index Only Scan using name_pkey on name n
+              Index Cond: (id = ci.person_id)

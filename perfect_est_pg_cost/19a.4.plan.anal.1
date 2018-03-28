@@ -1,0 +1,53 @@
+Aggregate  (cost=257154.00..257154.01 rows=1 width=64) (actual time=1838.693..1838.693 rows=1 loops=1)
+  ->  Nested Loop  (cost=118218.25..257153.99 rows=1 width=32) (actual time=630.719..1838.616 rows=184 loops=1)
+        ->  Nested Loop  (cost=118218.11..257153.81 rows=1 width=36) (actual time=630.713..1838.377 rows=184 loops=1)
+              Join Filter: (t.id = mi.movie_id)
+              ->  Nested Loop  (cost=118217.67..257127.02 rows=1 width=44) (actual time=630.700..1834.847 rows=77 loops=1)
+                    ->  Nested Loop  (cost=118217.25..257125.83 rows=1 width=48) (actual time=630.692..1834.588 rows=79 loops=1)
+                          Join Filter: (t.id = mc.movie_id)
+                          ->  Nested Loop  (cost=118216.82..257123.09 rows=1 width=40) (actual time=630.576..1833.962 rows=102 loops=1)
+                                ->  Nested Loop  (cost=118216.40..256981.29 rows=97 width=44) (actual time=630.157..1833.622 rows=115 loops=1)
+                                      Join Filter: (n.id = an.person_id)
+                                      ->  Nested Loop  (cost=118215.97..256761.28 rows=133 width=52) (actual time=630.116..1833.148 rows=133 loops=1)
+                                            ->  Hash Join  (cost=118215.54..255719.71 rows=727 width=31) (actual time=625.036..1830.372 rows=727 loops=1)
+                                                  Hash Cond: (ci.person_id = n.id)
+                                                  ->  Nested Loop  (cost=0.56..134018.14 rows=276166 width=12) (actual time=0.123..1210.589 rows=276166 loops=1)
+                                                        ->  Seq Scan on role_type rt  (cost=0.00..18.88 rows=1 width=4) (actual time=0.005..0.008 rows=1 loops=1)
+                                                              Filter: ((role)::text = 'actress'::text)
+                                                              Rows Removed by Filter: 11
+                                                        ->  Index Scan using role_id_cast_info on cast_info ci  (cost=0.56..133251.31 rows=74795 width=16) (actual time=0.117..1184.804 rows=276166 loops=1)
+                                                              Index Cond: (role_id = rt.id)
+                                                              Filter: (note = ANY ('{(voice),"(voice: Japanese version)","(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                                              Rows Removed by Filter: 7175807
+                                                  ->  Hash  (cost=118130.38..118130.38 rows=6768 width=19) (actual time=597.343..597.343 rows=6768 loops=1)
+                                                        Buckets: 8192  Batches: 1  Memory Usage: 420kB
+                                                        ->  Seq Scan on name n  (cost=0.00..118130.38 rows=6768 width=19) (actual time=250.256..596.024 rows=6768 loops=1)
+                                                              Filter: ((name ~~ '%Ang%'::text) AND ((gender)::text = 'f'::text))
+                                                              Rows Removed by Filter: 4160723
+                                            ->  Index Scan using title_pkey on title t  (cost=0.43..1.43 rows=1 width=21) (actual time=0.003..0.003 rows=0 loops=727)
+                                                  Index Cond: (id = ci.movie_id)
+                                                  Filter: ((production_year >= 2005) AND (production_year <= 2009))
+                                                  Rows Removed by Filter: 1
+                                      ->  Index Only Scan using person_id_aka_name on aka_name an  (cost=0.42..1.63 rows=2 width=4) (actual time=0.003..0.003 rows=1 loops=133)
+                                            Index Cond: (person_id = ci.person_id)
+                                            Heap Fetches: 115
+                                ->  Index Only Scan using char_name_pkey on char_name chn  (cost=0.43..1.46 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=115)
+                                      Index Cond: (id = ci.person_role_id)
+                                      Heap Fetches: 102
+                          ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..2.72 rows=1 width=8) (actual time=0.004..0.006 rows=1 loops=102)
+                                Index Cond: (movie_id = ci.movie_id)
+                                Filter: ((note IS NOT NULL) AND ((note ~~ '%(USA)%'::text) OR (note ~~ '%(worldwide)%'::text)))
+                                Rows Removed by Filter: 6
+                    ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..1.19 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=79)
+                          Index Cond: (id = mc.company_id)
+                          Filter: ((country_code)::text = '[us]'::text)
+                          Rows Removed by Filter: 0
+              ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..26.77 rows=2 width=8) (actual time=0.009..0.045 rows=2 loops=77)
+                    Index Cond: (movie_id = ci.movie_id)
+                    Filter: ((info IS NOT NULL) AND ((info ~~ 'Japan:%200%'::text) OR (info ~~ 'USA:%200%'::text)))
+                    Rows Removed by Filter: 166
+        ->  Index Scan using info_type_pkey on info_type it  (cost=0.14..0.16 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=184)
+              Index Cond: (id = mi.info_type_id)
+              Filter: ((info)::text = 'release dates'::text)
+Planning time: 12.359 ms
+Execution time: 1838.772 ms

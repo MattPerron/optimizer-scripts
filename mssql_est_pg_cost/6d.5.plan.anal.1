@@ -1,22 +1,26 @@
-Aggregate  (cost=112877.83..112877.84 rows=1 width=96) (actual time=523.085..523.085 rows=1 loops=1)
-  ->  Nested Loop  (cost=1.85..112877.17 rows=88 width=48) (actual time=51.705..523.047 rows=88 loops=1)
-        ->  Nested Loop  (cost=1.43..110543.20 rows=5202 width=36) (actual time=51.315..512.626 rows=5202 loops=1)
-              ->  Nested Loop  (cost=0.99..109999.52 rows=306 width=40) (actual time=51.303..510.104 rows=306 loops=1)
-                    ->  Nested Loop  (cost=0.56..109778.52 rows=486 width=19) (actual time=51.287..508.664 rows=486 loops=1)
-                          ->  Seq Scan on name n  (cost=0.00..107706.64 rows=2 width=19) (actual time=51.261..508.458 rows=2 loops=1)
-                                Filter: (name ~~ '%Downey%Robert%'::text)
-                                Rows Removed by Filter: 4167489
-                          ->  Index Scan using person_id_cast_info on cast_info ci  (cost=0.56..1030.97 rows=497 width=8) (actual time=0.017..0.068 rows=243 loops=2)
-                                Index Cond: (person_id = n.id)
-                    ->  Index Scan using title_pkey on title t  (cost=0.43..0.45 rows=1 width=21) (actual time=0.003..0.003 rows=1 loops=486)
-                          Index Cond: (id = ci.movie_id)
+Aggregate  (cost=13900.17..13900.18 rows=1 width=96) (actual time=3766.943..3766.943 rows=1 loops=1)
+  ->  Nested Loop  (cost=8.25..13900.16 rows=1 width=65) (actual time=165.844..3766.758 rows=88 loops=1)
+        ->  Nested Loop  (cost=7.82..12835.20 rows=2339 width=37) (actual time=0.472..1148.081 rows=785477 loops=1)
+              Join Filter: (t.id = ci.movie_id)
+              ->  Nested Loop  (cost=7.26..12537.26 rows=150 width=41) (actual time=0.447..174.910 rows=14165 loops=1)
+                    ->  Nested Loop  (cost=6.83..12405.01 rows=270 width=20) (actual time=0.442..69.934 rows=35548 loops=1)
+                          ->  Seq Scan on keyword k  (cost=0.00..3632.40 rows=8 width=20) (actual time=0.088..25.386 rows=8 loops=1)
+                                Filter: (keyword = ANY ('{superhero,sequel,second-part,marvel-comics,based-on-comic,tv-special,fight,violence}'::text[]))
+                                Rows Removed by Filter: 134162
+                          ->  Bitmap Heap Scan on movie_keyword mk  (cost=6.83..1093.49 rows=309 width=8) (actual time=0.780..4.948 rows=4444 loops=8)
+                                Recheck Cond: (keyword_id = k.id)
+                                Heap Blocks: exact=23488
+                                ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..6.75 rows=309 width=0) (actual time=0.408..0.408 rows=4444 loops=8)
+                                      Index Cond: (keyword_id = k.id)
+                    ->  Index Scan using title_pkey on title t  (cost=0.43..0.49 rows=1 width=21) (actual time=0.003..0.003 rows=0 loops=35548)
+                          Index Cond: (id = mk.movie_id)
                           Filter: (production_year > 2000)
-                          Rows Removed by Filter: 0
-              ->  Index Scan using movie_id_movie_keyword on movie_keyword mk  (cost=0.43..1.33 rows=45 width=8) (actual time=0.003..0.006 rows=17 loops=306)
-                    Index Cond: (movie_id = t.id)
-        ->  Index Scan using keyword_pkey on keyword k  (cost=0.42..0.45 rows=1 width=20) (actual time=0.002..0.002 rows=0 loops=5202)
-              Index Cond: (id = mk.keyword_id)
-              Filter: (keyword = ANY ('{superhero,sequel,second-part,marvel-comics,based-on-comic,tv-special,fight,violence}'::text[]))
+                          Rows Removed by Filter: 1
+              ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..1.52 rows=37 width=8) (actual time=0.008..0.060 rows=55 loops=14165)
+                    Index Cond: (movie_id = mk.movie_id)
+        ->  Index Scan using name_pkey on name n  (cost=0.43..0.46 rows=1 width=36) (actual time=0.003..0.003 rows=0 loops=785477)
+              Index Cond: (id = ci.person_id)
+              Filter: (name ~~ '%Downey%Robert%'::text)
               Rows Removed by Filter: 1
-Planning time: 0.797 ms
-Execution time: 523.120 ms
+Planning time: 0.736 ms
+Execution time: 3766.983 ms
