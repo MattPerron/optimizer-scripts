@@ -1,0 +1,33 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (n.id = pi.person_id)
+              ->  Nested Loop
+                    Join Filter: (n.id = an.person_id)
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Seq Scan on link_type lt
+                                                  Filter: ((link)::text = 'features'::text)
+                                            ->  Bitmap Heap Scan on movie_link ml
+                                                  Recheck Cond: (link_type_id = lt.id)
+                                                  ->  Bitmap Index Scan on link_type_id_movie_link
+                                                        Index Cond: (link_type_id = lt.id)
+                                      ->  Index Scan using title_pkey on title t
+                                            Index Cond: (id = ml.linked_movie_id)
+                                            Filter: ((production_year >= 1980) AND (production_year <= 1984))
+                                ->  Index Scan using movie_id_cast_info on cast_info ci
+                                      Index Cond: (movie_id = t.id)
+                          ->  Index Scan using name_pkey on name n
+                                Index Cond: (id = ci.person_id)
+                                Filter: (((name_pcode_cf)::text ~~ 'D%'::text) AND ((gender)::text = 'm'::text))
+                    ->  Index Scan using person_id_aka_name on aka_name an
+                          Index Cond: (person_id = ci.person_id)
+                          Filter: (name ~~ '%a%'::text)
+              ->  Index Scan using person_id_person_info on person_info pi
+                    Index Cond: (person_id = ci.person_id)
+                    Filter: (note = 'Volker Boehm'::text)
+        ->  Index Scan using info_type_pkey on info_type it
+              Index Cond: (id = pi.info_type_id)
+              Filter: ((info)::text = 'mini biography'::text)

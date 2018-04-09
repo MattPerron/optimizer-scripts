@@ -1,0 +1,38 @@
+Aggregate  (cost=301398.16..301398.17 rows=1 width=128) (actual time=6105.139..6105.139 rows=1 loops=1)
+  ->  Nested Loop  (cost=126722.95..301234.13 rows=16403 width=64) (actual time=999.305..5738.473 rows=483082 loops=1)
+        ->  Nested Loop  (cost=126722.53..293296.63 rows=14762 width=56) (actual time=999.285..5173.353 rows=173567 loops=1)
+              ->  Nested Loop  (cost=126722.10..286127.23 rows=10745 width=44) (actual time=999.265..4666.701 rows=189464 loops=1)
+                    Join Filter: (ci.movie_id = t.id)
+                    ->  Hash Join  (cost=126721.67..280442.88 rows=10746 width=35) (actual time=999.237..4064.768 rows=189464 loops=1)
+                          Hash Cond: (mc.company_id = cn.id)
+                          ->  Nested Loop  (cost=119728.67..273074.10 rows=29765 width=39) (actual time=940.419..3861.753 rows=473712 loops=1)
+                                ->  Hash Join  (cost=119728.24..257264.30 rows=23008 width=31) (actual time=940.371..2880.117 rows=276005 loops=1)
+                                      Hash Cond: (ci.person_id = n.id)
+                                      ->  Nested Loop  (cost=0.56..134050.03 rows=276166 width=12) (actual time=0.172..1816.285 rows=276166 loops=1)
+                                            ->  Seq Scan on role_type rt  (cost=0.00..1.15 rows=1 width=4) (actual time=0.007..0.018 rows=1 loops=1)
+                                                  Filter: ((role)::text = 'actress'::text)
+                                                  Rows Removed by Filter: 11
+                                            ->  Index Scan using role_id_cast_info on cast_info ci  (cost=0.56..133252.59 rows=79629 width=16) (actual time=0.162..1769.783 rows=276166 loops=1)
+                                                  Index Cond: (role_id = rt.id)
+                                                  Filter: (note = ANY ('{(voice),"(voice: Japanese version)","(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                                  Rows Removed by Filter: 7175807
+                                      ->  Hash  (cost=107708.24..107708.24 rows=961555 width=19) (actual time=937.257..937.257 rows=961555 loops=1)
+                                            Buckets: 1048576  Batches: 1  Memory Usage: 58170kB
+                                            ->  Seq Scan on name n  (cost=0.00..107708.24 rows=961555 width=19) (actual time=283.941..692.562 rows=961555 loops=1)
+                                                  Filter: ((gender)::text = 'f'::text)
+                                                  Rows Removed by Filter: 3205936
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.64 rows=5 width=8) (actual time=0.002..0.003 rows=2 loops=276005)
+                                      Index Cond: (movie_id = ci.movie_id)
+                          ->  Hash  (cost=5932.46..5932.46 rows=84843 width=4) (actual time=58.369..58.369 rows=84843 loops=1)
+                                Buckets: 131072  Batches: 1  Memory Usage: 4007kB
+                                ->  Seq Scan on company_name cn  (cost=0.00..5932.46 rows=84843 width=4) (actual time=0.011..44.568 rows=84843 loops=1)
+                                      Filter: ((country_code)::text = '[us]'::text)
+                                      Rows Removed by Filter: 150154
+                    ->  Index Scan using title_pkey on title t  (cost=0.43..0.52 rows=1 width=21) (actual time=0.003..0.003 rows=1 loops=189464)
+                          Index Cond: (id = mc.movie_id)
+              ->  Index Scan using char_name_pkey on char_name chn  (cost=0.43..0.67 rows=1 width=20) (actual time=0.002..0.002 rows=1 loops=189464)
+                    Index Cond: (id = ci.person_role_id)
+        ->  Index Scan using person_id_aka_name on aka_name an  (cost=0.42..0.52 rows=2 width=20) (actual time=0.002..0.002 rows=3 loops=173567)
+              Index Cond: (person_id = n.id)
+Planning time: 5.193 ms
+Execution time: 6106.164 ms

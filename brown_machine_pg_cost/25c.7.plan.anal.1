@@ -1,0 +1,56 @@
+Aggregate  (cost=1142654.38..1142654.39 rows=1 width=128) (actual time=8109.273..8109.273 rows=1 loops=1)
+  ->  Nested Loop  (cost=904386.31..1142475.32 rows=17906 width=82) (actual time=7293.521..8082.987 rows=26153 loops=1)
+        Join Filter: (mi.movie_id = t.id)
+        ->  Nested Loop  (cost=904385.88..1127269.05 rows=17907 width=81) (actual time=7293.498..8010.139 rows=26153 loops=1)
+              ->  Hash Join  (cost=904385.45..1080866.99 rows=42900 width=70) (actual time=7293.455..7862.224 rows=42900 loops=1)
+                    Hash Cond: (mi.movie_id = mi_idx.movie_id)
+                    ->  Nested Loop  (cost=3919.17..178844.88 rows=186594 width=48) (actual time=80.239..604.375 rows=186594 loops=1)
+                          ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.008..0.032 rows=1 loops=1)
+                                Filter: ((info)::text = 'genres'::text)
+                                Rows Removed by Filter: 112
+                          ->  Bitmap Heap Scan on movie_info mi  (cost=3919.17..178818.64 rows=2382 width=52) (actual time=80.228..579.155 rows=186594 loops=1)
+                                Recheck Cond: (info_type_id = it1.id)
+                                Filter: (info = ANY ('{Horror,Action,Sci-Fi,Thriller,Crime,War}'::text[]))
+                                Rows Removed by Filter: 1347315
+                                Heap Blocks: exact=9770
+                                ->  Bitmap Index Scan on info_type_id_movie_info  (cost=0.00..3918.58 rows=212019 width=0) (actual time=78.394..78.394 rows=1533909 loops=1)
+                                      Index Cond: (info_type_id = it1.id)
+                    ->  Hash  (cost=899978.89..899978.89 rows=38991 width=22) (actual time=7212.732..7212.732 rows=38991 loops=1)
+                          Buckets: 65536  Batches: 1  Memory Usage: 2557kB
+                          ->  Hash Join  (cost=45060.58..899978.89 rows=38991 width=22) (actual time=4012.439..7200.005 rows=38991 loops=1)
+                                Hash Cond: (ci.movie_id = mi_idx.movie_id)
+                                ->  Seq Scan on cast_info ci  (cost=0.00..841664.55 rows=1244716 width=8) (actual time=165.998..6509.362 rows=1244716 loops=1)
+                                      Filter: (note = ANY ('{(writer),"(head writer)","(written by)",(story),"(story editor)"}'::text[]))
+                                      Rows Removed by Filter: 34999628
+                                ->  Hash  (cost=44264.32..44264.32 rows=63701 width=14) (actual time=480.299..480.299 rows=63701 loops=1)
+                                      Buckets: 65536  Batches: 1  Memory Usage: 3335kB
+                                      ->  Hash Join  (cost=27918.19..44264.32 rows=63701 width=14) (actual time=296.105..465.699 rows=63701 loops=1)
+                                            Hash Cond: (mk.movie_id = mi_idx.movie_id)
+                                            ->  Nested Loop  (cost=6.77..10991.68 rows=76714 width=4) (actual time=4.497..139.893 rows=76714 loops=1)
+                                                  ->  Seq Scan on keyword k  (cost=0.00..3464.69 rows=7 width=4) (actual time=1.108..39.365 rows=7 loops=1)
+                                                        Filter: (keyword = ANY ('{murder,violence,blood,gore,death,female-nudity,hospital}'::text[]))
+                                                        Rows Removed by Filter: 134163
+                                                  ->  Bitmap Heap Scan on movie_keyword mk  (cost=6.77..1072.28 rows=301 width=8) (actual time=2.870..12.777 rows=10959 loops=7)
+                                                        Recheck Cond: (keyword_id = k.id)
+                                                        Heap Blocks: exact=53234
+                                                        ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..6.69 rows=301 width=0) (actual time=1.498..1.498 rows=10959 loops=7)
+                                                              Index Cond: (keyword_id = k.id)
+                                            ->  Hash  (cost=22162.36..22162.36 rows=459925 width=10) (actual time=290.425..290.425 rows=459925 loops=1)
+                                                  Buckets: 524288  Batches: 1  Memory Usage: 22143kB
+                                                  ->  Nested Loop  (cost=6462.25..22162.36 rows=459925 width=10) (actual time=26.361..196.348 rows=459925 loops=1)
+                                                        ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.021..0.026 rows=1 loops=1)
+                                                              Filter: ((info)::text = 'votes'::text)
+                                                              Rows Removed by Filter: 112
+                                                        ->  Bitmap Heap Scan on movie_info_idx mi_idx  (cost=6462.25..18709.86 rows=345009 width=14) (actual time=26.335..112.810 rows=459925 loops=1)
+                                                              Recheck Cond: (info_type_id = it2.id)
+                                                              Heap Blocks: exact=7934
+                                                              ->  Bitmap Index Scan on info_type_id_movie_info_idx  (cost=0.00..6375.99 rows=345009 width=0) (actual time=24.866..24.866 rows=459925 loops=1)
+                                                                    Index Cond: (info_type_id = it2.id)
+              ->  Index Scan using name_pkey on name n  (cost=0.43..1.08 rows=1 width=19) (actual time=0.003..0.003 rows=1 loops=42900)
+                    Index Cond: (id = ci.person_id)
+                    Filter: ((gender)::text = 'm'::text)
+                    Rows Removed by Filter: 0
+        ->  Index Scan using title_pkey on title t  (cost=0.43..0.84 rows=1 width=21) (actual time=0.002..0.002 rows=1 loops=26153)
+              Index Cond: (id = mk.movie_id)
+Planning time: 10.969 ms
+Execution time: 8109.986 ms

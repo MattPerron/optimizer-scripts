@@ -1,0 +1,32 @@
+Aggregate  (cost=74013.36..74013.37 rows=1 width=64) (actual time=143.865..143.865 rows=1 loops=1)
+  ->  Nested Loop  (cost=1.85..74013.36 rows=1 width=33) (actual time=143.861..143.861 rows=0 loops=1)
+        Join Filter: (mc.company_type_id = ct.id)
+        ->  Nested Loop  (cost=1.85..74012.27 rows=0 width=37) (actual time=143.861..143.861 rows=0 loops=1)
+              ->  Nested Loop  (cost=1.42..74011.69 rows=0 width=25) (actual time=143.861..143.861 rows=0 loops=1)
+                    Join Filter: (ci.role_id = rt.id)
+                    Rows Removed by Join Filter: 2614
+                    ->  Seq Scan on role_type rt  (cost=0.00..1.15 rows=1 width=4) (actual time=0.007..0.009 rows=1 loops=1)
+                          Filter: ((role)::text = 'actor'::text)
+                          Rows Removed by Filter: 11
+                    ->  Nested Loop  (cost=1.42..73977.86 rows=2614 width=29) (actual time=2.211..143.537 rows=2614 loops=1)
+                          Join Filter: (t.id = ci.movie_id)
+                          ->  Nested Loop  (cost=0.86..71639.59 rows=1259 width=29) (actual time=2.193..87.076 rows=1259 loops=1)
+                                ->  Nested Loop  (cost=0.43..67077.81 rows=8790 width=8) (actual time=0.026..54.368 rows=8790 loops=1)
+                                      ->  Seq Scan on company_name cn  (cost=0.00..5932.46 rows=1361 width=4) (actual time=0.013..37.834 rows=1361 loops=1)
+                                            Filter: ((country_code)::text = '[ru]'::text)
+                                            Rows Removed by Filter: 233636
+                                      ->  Index Scan using company_id_movie_companies on movie_companies mc  (cost=0.43..43.61 rows=132 width=12) (actual time=0.006..0.011 rows=6 loops=1361)
+                                            Index Cond: (company_id = cn.id)
+                                ->  Index Scan using title_pkey on title t  (cost=0.43..0.52 rows=1 width=21) (actual time=0.003..0.003 rows=0 loops=8790)
+                                      Index Cond: (id = mc.movie_id)
+                                      Filter: (production_year > 2010)
+                                      Rows Removed by Filter: 1
+                          ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..1.84 rows=1 width=12) (actual time=0.025..0.044 rows=2 loops=1259)
+                                Index Cond: (movie_id = mc.movie_id)
+                                Filter: (note ~~ '%(producer)%'::text)
+                                Rows Removed by Filter: 44
+              ->  Index Scan using char_name_pkey on char_name chn  (cost=0.43..0.58 rows=1 width=20) (never executed)
+                    Index Cond: (id = ci.person_role_id)
+        ->  Seq Scan on company_type ct  (cost=0.00..1.04 rows=4 width=4) (never executed)
+Planning time: 2.555 ms
+Execution time: 143.934 ms

@@ -1,0 +1,53 @@
+Aggregate  (cost=62835.54..62835.55 rows=1 width=64) (actual time=396.707..396.707 rows=1 loops=1)
+  ->  Nested Loop  (cost=11756.29..62835.53 rows=2 width=27) (actual time=317.536..396.430 rows=618 loops=1)
+        ->  Nested Loop  (cost=11755.87..62834.65 rows=2 width=31) (actual time=317.523..394.594 rows=618 loops=1)
+              ->  Nested Loop  (cost=11755.43..62832.84 rows=1 width=43) (actual time=317.509..394.272 rows=6 loops=1)
+                    ->  Nested Loop  (cost=11755.30..62832.69 rows=1 width=47) (actual time=317.500..394.250 rows=6 loops=1)
+                          ->  Nested Loop  (cost=11754.88..62832.24 rows=1 width=51) (actual time=317.488..394.211 rows=6 loops=1)
+                                ->  Nested Loop  (cost=11754.45..62831.60 rows=1 width=39) (actual time=317.475..394.176 rows=5 loops=1)
+                                      ->  Nested Loop  (cost=11754.31..62829.37 rows=13 width=43) (actual time=317.464..394.153 rows=5 loops=1)
+                                            ->  Hash Join  (cost=11753.88..57407.54 rows=2636 width=35) (actual time=76.960..316.632 rows=1033 loops=1)
+                                                  Hash Cond: (t.id = cc.movie_id)
+                                                  ->  Nested Loop  (cost=7843.07..52483.63 rows=197350 width=31) (actual time=37.949..239.846 rows=274015 loops=1)
+                                                        ->  Seq Scan on kind_type kt  (cost=0.00..1.09 rows=1 width=14) (actual time=0.003..0.007 rows=1 loops=1)
+                                                              Filter: ((kind)::text = 'movie'::text)
+                                                              Rows Removed by Filter: 6
+                                                        ->  Bitmap Heap Scan on title t  (cost=7843.07..50162.34 rows=232020 width=25) (actual time=37.943..202.949 rows=274015 loops=1)
+                                                              Recheck Cond: (kind_id = kt.id)
+                                                              Filter: (production_year > 2000)
+                                                              Rows Removed by Filter: 388810
+                                                              Heap Blocks: exact=12863
+                                                              ->  Bitmap Index Scan on kind_id_title  (cost=0.00..7785.07 rows=421418 width=0) (actual time=35.583..35.583 rows=662825 loops=1)
+                                                                    Index Cond: (kind_id = kt.id)
+                                                  ->  Hash  (cost=3488.66..3488.66 rows=33772 width=4) (actual time=38.469..38.469 rows=24592 loops=1)
+                                                        Buckets: 65536  Batches: 1  Memory Usage: 1377kB
+                                                        ->  Hash Join  (cost=1.06..3488.66 rows=33772 width=4) (actual time=0.022..34.278 rows=24592 loops=1)
+                                                              Hash Cond: (cc.status_id = cct1.id)
+                                                              ->  Seq Scan on complete_cast cc  (cost=0.00..2081.86 rows=135086 width=8) (actual time=0.010..14.389 rows=135086 loops=1)
+                                                              ->  Hash  (cost=1.05..1.05 rows=1 width=4) (actual time=0.006..0.006 rows=1 loops=1)
+                                                                    Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                                                                    ->  Seq Scan on comp_cast_type cct1  (cost=0.00..1.05 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=1)
+                                                                          Filter: ((kind)::text = 'complete+verified'::text)
+                                                                          Rows Removed by Filter: 3
+                                            ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..2.05 rows=1 width=8) (actual time=0.074..0.075 rows=0 loops=1033)
+                                                  Index Cond: (movie_id = t.id)
+                                                  Filter: ((info IS NOT NULL) AND (note ~~ '%internet%'::text) AND ((info ~~ 'USA:% 199%'::text) OR (info ~~ 'USA:% 200%'::text)))
+                                                  Rows Removed by Filter: 211
+                                      ->  Index Scan using info_type_pkey on info_type it1  (cost=0.14..0.17 rows=1 width=4) (actual time=0.004..0.004 rows=1 loops=5)
+                                            Index Cond: (id = mi.info_type_id)
+                                            Filter: ((info)::text = 'release dates'::text)
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.59 rows=5 width=12) (actual time=0.005..0.006 rows=1 loops=5)
+                                      Index Cond: (movie_id = t.id)
+                          ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.45 rows=1 width=4) (actual time=0.006..0.006 rows=1 loops=6)
+                                Index Cond: (id = mc.company_id)
+                                Filter: ((country_code)::text = '[us]'::text)
+                    ->  Index Only Scan using company_type_pkey on company_type ct  (cost=0.13..0.15 rows=1 width=4) (actual time=0.002..0.002 rows=1 loops=6)
+                          Index Cond: (id = mc.company_type_id)
+                          Heap Fetches: 6
+              ->  Index Scan using movie_id_movie_keyword on movie_keyword mk  (cost=0.43..1.34 rows=46 width=8) (actual time=0.006..0.032 rows=103 loops=6)
+                    Index Cond: (movie_id = t.id)
+        ->  Index Only Scan using keyword_pkey on keyword k  (cost=0.42..0.44 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=618)
+              Index Cond: (id = mk.keyword_id)
+              Heap Fetches: 618
+Planning time: 30.295 ms
+Execution time: 396.841 ms

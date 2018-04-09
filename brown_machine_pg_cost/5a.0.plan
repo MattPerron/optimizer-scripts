@@ -1,0 +1,19 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (mi.info_type_id = it.id)
+        ->  Seq Scan on info_type it
+        ->  Materialize
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Seq Scan on company_type ct
+                                      Filter: ((kind)::text = 'production companies'::text)
+                                ->  Index Scan using company_type_id_movie_companies on movie_companies mc
+                                      Index Cond: (company_type_id = ct.id)
+                                      Filter: ((note ~~ '%(theatrical)%'::text) AND (note ~~ '%(France)%'::text))
+                          ->  Index Scan using title_pkey on title t
+                                Index Cond: (id = mc.movie_id)
+                                Filter: (production_year > 2005)
+                    ->  Index Scan using movie_id_movie_info on movie_info mi
+                          Index Cond: (movie_id = t.id)
+                          Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German}'::text[]))
