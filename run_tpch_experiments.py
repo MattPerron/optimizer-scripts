@@ -19,14 +19,17 @@ def main():
     with pg.connect('host=localhost user=matt dbname=tpch') as conn, conn.cursor() as cur, open(os.path.join(output_dir, "aggregate_data.csv"), 'w', 1) as agg_data:
         agg_data.write("query_index, query_name, num_tables, perfect_estimates, new_plan, execution_time1, execution_time2\n")
         for query_num in range(1, 23):
-            filename = "tpch-queries/{}.sql".format(query_num)
-            with open(filename, 'r') as f:
-                contents = f.read()
+            explain_filename = "tpch-queries/{}-explain.sql".format(query_num)
+            with open(explain_filename, 'r') as f:
+                explain_contents = f.read()
+            explain_analyze_filename = "tpch-queries/{}-explain-analyze.sql".format(query_num)
+            with open(explain_analyze_filename, 'r') as f:
+                explain_analyze_contents = f.read()
             counting = False
             max_table_count = table_count[query_num] 
             plans = [None for i in range(max_table_count+1)]
-            for estimate in range(max_table_count+1):
-                print(filename, estimate) 
+            for estimate in range(max_table_count, max_table_count+1):
+                print(explain_filename, estimate) 
                 #explain once to get the plan
                 cur.execute("set current_test_query={};".format(index))
                 cur.execute("set perfect_estimates={};".format(estimate))
@@ -44,7 +47,7 @@ def main():
                     cur.execute("set enable_nestloop=true;")
                 else:
                     cur.execute("set enable_nestloop=false;")
-                cur.execute("explain (costs false) " + contents);
+                cur.execute(explain_contents);
                 plan = ''
                 with open(os.path.join(output_dir, "{}.{}.plan".format(query_num, estimate)), 'w') as plan_file:
                     for line in cur.fetchall():
@@ -54,7 +57,7 @@ def main():
                 plans[estimate] = plan
 
                 #execute it again to get the execution time (also output later for validation)
-                cur.execute("explain analyze "+contents)
+                cur.execute(explain_analyze_contents)
                 with open(os.path.join(output_dir, "{}.{}.plan.anal.1".format(query_num, estimate)), 'w') as plan_file:
                     lines = cur.fetchall()
                     for line in lines:
@@ -62,7 +65,7 @@ def main():
                     execution_time1 = lines[-1][0].split()[2]
                     
                 #one last time to avoid cacheing effects
-                cur.execute("explain analyze "+contents)
+                cur.execute(explain_analyze_contents)
                 with open(os.path.join(output_dir, "{}.{}.plan.anal.2".format(query_num, estimate)), 'w') as plan_file:
                     lines = cur.fetchall()
                     for line in lines:
