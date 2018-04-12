@@ -1,3 +1,4 @@
+EXPLAIN (COSTS FALSE) 
 
 
 select

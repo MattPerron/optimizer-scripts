@@ -1,3 +1,4 @@
+EXPLAIN ANALYZE
 
 
 select

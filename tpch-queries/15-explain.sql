@@ -12,6 +12,7 @@ create view revenue0 (supplier_no, total_revenue) as
 		l_suppkey;
 
 
+EXPLAIN (COSTS FALSE) 
 select
 	s_suppkey,
 	s_name,
