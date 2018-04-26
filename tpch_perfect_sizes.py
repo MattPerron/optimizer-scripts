@@ -10,11 +10,15 @@ def main():
     #set up map
     for i in range(1,23,1):
         table_map[i] = {}
+    table_map_offsets = {}
     query = 1
     exclude = [2, 15]
     with open('tpch-table-mapping.csv', 'r') as table_map_file:
         for line in table_map_file:
             tables = line.strip().split(',')
+            if len(tables[0]) > 0:
+                table_map_offsets[query] = int(tables[0])
+            tables = tables[1:]
             index = 0
             for table in tables:
                 table_map[query][table] = index
@@ -37,7 +41,7 @@ def main():
                     card = long(line.split(',')[1])
                     comb = 0
                     for table in tables:
-                        comb = comb | 1<<(table_map[query_num][table])
+                        comb = comb | 1<<(table_map[query_num][table]+table_map_offsets[query_num])
                     if card == 38760:
                         print card, bin(comb).count("1"), comb 
                     tpch_sizes.seek((query_num*NUM_COMBS+comb)*LONG_SIZE, 0)
