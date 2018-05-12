@@ -1,0 +1,27 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              ->  Hash Join
+                    Hash Cond: (ci.role_id = rt.id)
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Hash Join
+                                      Hash Cond: (mc.company_id = cn.id)
+                                      ->  Seq Scan on movie_companies mc
+                                            Filter: ((note ~~ '%(Japan)%'::text) AND (note !~~ '%(USA)%'::text))
+                                      ->  Hash
+                                            ->  Seq Scan on company_name cn
+                                                  Filter: ((country_code)::text = '[jp]'::text)
+                                ->  Index Scan using title_pkey on title t
+                                      Index Cond: (id = mc.movie_id)
+                          ->  Index Scan using movie_id_cast_info on cast_info ci
+                                Index Cond: (movie_id = t.id)
+                                Filter: (note = '(voice: English version)'::text)
+                    ->  Hash
+                          ->  Seq Scan on role_type rt
+                                Filter: ((role)::text = 'actress'::text)
+              ->  Index Scan using person_id_aka_name on aka_name an1
+                    Index Cond: (person_id = ci.person_id)
+        ->  Index Scan using name_pkey on name n1
+              Index Cond: (id = an1.person_id)
+              Filter: ((name ~~ '%Yo%'::text) AND (name !~~ '%Yu%'::text))

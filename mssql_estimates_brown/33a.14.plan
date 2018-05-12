@@ -1,0 +1,55 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (t2.kind_id = kt2.id)
+              ->  Seq Scan on kind_type kt2
+                    Filter: ((kind)::text = 'tv series'::text)
+              ->  Nested Loop
+                    ->  Nested Loop
+                          Join Filter: (t2.id = mc2.movie_id)
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      Join Filter: (ml.linked_movie_id = t2.id)
+                                      ->  Nested Loop
+                                            Join Filter: (it2.id = mi_idx2.info_type_id)
+                                            ->  Nested Loop
+                                                  ->  Nested Loop
+                                                        Join Filter: (ml.link_type_id = lt.id)
+                                                        ->  Nested Loop
+                                                              Join Filter: (it1.id = mi_idx1.info_type_id)
+                                                              ->  Nested Loop
+                                                                    ->  Nested Loop
+                                                                          Join Filter: (t1.kind_id = kt1.id)
+                                                                          ->  Merge Join
+                                                                                Merge Cond: (ml.movie_id = t1.id)
+                                                                                ->  Index Scan using movie_id_movie_link on movie_link ml
+                                                                                ->  Index Scan using title_pkey on title t1
+                                                                          ->  Materialize
+                                                                                ->  Seq Scan on kind_type kt1
+                                                                                      Filter: ((kind)::text = 'tv series'::text)
+                                                                    ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx1
+                                                                          Index Cond: (movie_id = t1.id)
+                                                              ->  Materialize
+                                                                    ->  Seq Scan on info_type it1
+                                                                          Filter: ((info)::text = 'rating'::text)
+                                                        ->  Materialize
+                                                              ->  Seq Scan on link_type lt
+                                                                    Filter: ((link)::text = ANY ('{sequel,follows,"followed by"}'::text[]))
+                                                  ->  Materialize
+                                                        ->  Seq Scan on info_type it2
+                                                              Filter: ((info)::text = 'rating'::text)
+                                            ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx2
+                                                  Index Cond: (movie_id = ml.linked_movie_id)
+                                                  Filter: (info < '3.0'::text)
+                                      ->  Index Scan using title_pkey on title t2
+                                            Index Cond: (id = mi_idx2.movie_id)
+                                            Filter: ((production_year >= 2005) AND (production_year <= 2008))
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc1
+                                      Index Cond: (movie_id = t1.id)
+                          ->  Index Scan using movie_id_movie_companies on movie_companies mc2
+                                Index Cond: (movie_id = mi_idx2.movie_id)
+                    ->  Index Scan using company_name_pkey on company_name cn2
+                          Index Cond: (id = mc2.company_id)
+        ->  Index Scan using company_name_pkey on company_name cn1
+              Index Cond: (id = mc1.company_id)
+              Filter: ((country_code)::text = '[us]'::text)
