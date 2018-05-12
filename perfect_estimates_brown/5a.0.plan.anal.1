@@ -1,0 +1,23 @@
+Aggregate  (cost=55325.94..55325.95 rows=1 width=32) (actual time=375.815..375.815 rows=1 loops=1)
+  ->  Nested Loop  (cost=1.29..55325.87 rows=27 width=17) (actual time=375.811..375.811 rows=0 loops=1)
+        Join Filter: (mi.info_type_id = it.id)
+        ->  Seq Scan on info_type it  (cost=0.00..2.13 rows=113 width=4) (actual time=0.006..0.019 rows=113 loops=1)
+        ->  Materialize  (cost=1.29..55278.05 rows=27 width=21) (actual time=3.325..3.325 rows=0 loops=113)
+              ->  Nested Loop  (cost=1.29..55277.91 rows=27 width=21) (actual time=375.762..375.762 rows=0 loops=1)
+                    ->  Nested Loop  (cost=0.86..55048.50 rows=97 width=25) (actual time=375.761..375.761 rows=0 loops=1)
+                          ->  Nested Loop  (cost=0.43..53072.99 rows=241 width=4) (actual time=375.761..375.761 rows=0 loops=1)
+                                ->  Seq Scan on company_type ct  (cost=0.00..1.05 rows=1 width=4) (actual time=0.003..0.007 rows=1 loops=1)
+                                      Filter: ((kind)::text = 'production companies'::text)
+                                      Rows Removed by Filter: 3
+                                ->  Index Scan using company_type_id_movie_companies on movie_companies mc  (cost=0.43..53067.12 rows=482 width=8) (actual time=375.751..375.751 rows=0 loops=1)
+                                      Index Cond: (company_type_id = ct.id)
+                                      Filter: ((note ~~ '%(theatrical)%'::text) AND (note ~~ '%(France)%'::text))
+                                      Rows Removed by Filter: 1334883
+                          ->  Index Scan using title_pkey on title t  (cost=0.43..8.20 rows=1 width=21) (never executed)
+                                Index Cond: (id = mc.movie_id)
+                                Filter: (production_year > 2005)
+                    ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..2.36 rows=1 width=8) (never executed)
+                          Index Cond: (movie_id = t.id)
+                          Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German}'::text[]))
+Planning time: 1.393 ms
+Execution time: 375.873 ms

@@ -1,0 +1,26 @@
+Aggregate  (cost=189125.99..189126.00 rows=1 width=32) (actual time=311.101..311.101 rows=1 loops=1)
+  ->  Hash Join  (cost=4.84..189011.01 rows=45990 width=17) (actual time=3.795..310.593 rows=669 loops=1)
+        Hash Cond: (mi.info_type_id = it.id)
+        ->  Nested Loop  (cost=1.29..188430.46 rows=45990 width=21) (actual time=3.748..310.201 rows=669 loops=1)
+              ->  Nested Loop  (cost=0.86..119696.73 rows=32031 width=25) (actual time=3.739..297.612 rows=767 loops=1)
+                    ->  Nested Loop  (cost=0.43..53988.97 rows=46040 width=4) (actual time=3.729..293.579 rows=798 loops=1)
+                          ->  Seq Scan on company_type ct  (cost=0.00..1.05 rows=1 width=4) (actual time=0.007..0.011 rows=1 loops=1)
+                                Filter: ((kind)::text = 'production companies'::text)
+                                Rows Removed by Filter: 3
+                          ->  Index Scan using company_type_id_movie_companies on movie_companies mc  (cost=0.43..53067.12 rows=92080 width=8) (actual time=3.721..293.403 rows=798 loops=1)
+                                Index Cond: (company_type_id = ct.id)
+                                Filter: ((note !~~ '%(TV)%'::text) AND (note ~~ '%(USA)%'::text))
+                                Rows Removed by Filter: 1334085
+                    ->  Index Scan using title_pkey on title t  (cost=0.43..1.43 rows=1 width=21) (actual time=0.004..0.004 rows=1 loops=798)
+                          Index Cond: (id = mc.movie_id)
+                          Filter: (production_year > 1990)
+                          Rows Removed by Filter: 0
+              ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..2.13 rows=2 width=8) (actual time=0.014..0.016 rows=1 loops=767)
+                    Index Cond: (movie_id = t.id)
+                    Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German,USA,American}'::text[]))
+                    Rows Removed by Filter: 10
+        ->  Hash  (cost=2.13..2.13 rows=113 width=4) (actual time=0.037..0.037 rows=113 loops=1)
+              Buckets: 1024  Batches: 1  Memory Usage: 12kB
+              ->  Seq Scan on info_type it  (cost=0.00..2.13 rows=113 width=4) (actual time=0.005..0.019 rows=113 loops=1)
+Planning time: 1.651 ms
+Execution time: 311.171 ms

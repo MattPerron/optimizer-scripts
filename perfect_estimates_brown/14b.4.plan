@@ -1,0 +1,34 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (mi_idx.info_type_id = it2.id)
+        ->  Nested Loop
+              Join Filter: (mi.info_type_id = it1.id)
+              ->  Nested Loop
+                    Join Filter: (t.id = mi.movie_id)
+                    ->  Nested Loop
+                          Join Filter: (t.id = mi_idx.movie_id)
+                          ->  Nested Loop
+                                Join Filter: (t.kind_id = kt.id)
+                                ->  Seq Scan on kind_type kt
+                                      Filter: ((kind)::text = 'movie'::text)
+                                ->  Nested Loop
+                                      ->  Nested Loop
+                                            ->  Seq Scan on keyword k
+                                                  Filter: (keyword = ANY ('{murder,murder-in-title}'::text[]))
+                                            ->  Bitmap Heap Scan on movie_keyword mk
+                                                  Recheck Cond: (keyword_id = k.id)
+                                                  ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                        Index Cond: (keyword_id = k.id)
+                                      ->  Index Scan using title_pkey on title t
+                                            Index Cond: (id = mk.movie_id)
+                                            Filter: ((production_year > 2010) AND ((title ~~ '%murder%'::text) OR (title ~~ '%Murder%'::text) OR (title ~~ '%Mord%'::text)))
+                          ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx
+                                Index Cond: (movie_id = mk.movie_id)
+                                Filter: (info > '6.0'::text)
+                    ->  Index Scan using movie_id_movie_info on movie_info mi
+                          Index Cond: (movie_id = mk.movie_id)
+                          Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German,USA,American}'::text[]))
+              ->  Seq Scan on info_type it1
+                    Filter: ((info)::text = 'countries'::text)
+        ->  Seq Scan on info_type it2
+              Filter: ((info)::text = 'rating'::text)

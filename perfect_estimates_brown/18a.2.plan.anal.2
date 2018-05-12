@@ -1,0 +1,38 @@
+Aggregate  (cost=294562.05..294562.06 rows=1 width=96) (actual time=10085.890..10085.890 rows=1 loops=1)
+  ->  Nested Loop  (cost=31884.43..294561.96 rows=12 width=67) (actual time=608.067..10083.997 rows=410 loops=1)
+        ->  Nested Loop  (cost=31884.00..294556.44 rows=12 width=62) (actual time=608.038..10074.367 rows=410 loops=1)
+              ->  Nested Loop  (cost=31883.57..291038.63 rows=5459 width=66) (actual time=336.955..8833.456 rows=107339 loops=1)
+                    ->  Hash Join  (cost=31883.01..215831.44 rows=3199 width=58) (actual time=336.782..570.326 rows=45431 loops=1)
+                          Hash Cond: (mi.movie_id = mi_idx.movie_id)
+                          ->  Nested Loop  (cost=3971.58..179403.51 rows=121863 width=48) (actual time=9.409..99.551 rows=121863 loops=1)
+                                ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.017..0.021 rows=1 loops=1)
+                                      Filter: ((info)::text = 'budget'::text)
+                                      Rows Removed by Filter: 112
+                                ->  Bitmap Heap Scan on movie_info mi  (cost=3971.58..177280.91 rows=212019 width=52) (actual time=9.389..72.974 rows=121863 loops=1)
+                                      Recheck Cond: (info_type_id = it1.id)
+                                      Heap Blocks: exact=4741
+                                      ->  Bitmap Index Scan on info_type_id_movie_info  (cost=0.00..3918.58 rows=212019 width=0) (actual time=8.563..8.563 rows=121863 loops=1)
+                                            Index Cond: (info_type_id = it1.id)
+                          ->  Hash  (cost=22162.36..22162.36 rows=459925 width=10) (actual time=326.839..326.839 rows=459925 loops=1)
+                                Buckets: 524288  Batches: 1  Memory Usage: 22143kB
+                                ->  Nested Loop  (cost=6462.25..22162.36 rows=459925 width=10) (actual time=32.592..230.429 rows=459925 loops=1)
+                                      ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.015..0.021 rows=1 loops=1)
+                                            Filter: ((info)::text = 'votes'::text)
+                                            Rows Removed by Filter: 112
+                                      ->  Bitmap Heap Scan on movie_info_idx mi_idx  (cost=6462.25..18709.86 rows=345009 width=14) (actual time=32.574..147.465 rows=459925 loops=1)
+                                            Recheck Cond: (info_type_id = it2.id)
+                                            Heap Blocks: exact=7934
+                                            ->  Bitmap Index Scan on info_type_id_movie_info_idx  (cost=0.00..6375.99 rows=345009 width=0) (actual time=31.095..31.095 rows=459925 loops=1)
+                                                  Index Cond: (info_type_id = it2.id)
+                    ->  Index Scan using movie_id_cast_info on cast_info ci  (cost=0.56..23.49 rows=2 width=8) (actual time=0.110..0.181 rows=2 loops=45431)
+                          Index Cond: (movie_id = mi.movie_id)
+                          Filter: (note = ANY ('{(producer),"(executive producer)"}'::text[]))
+                          Rows Removed by Filter: 38
+              ->  Index Scan using name_pkey on name n  (cost=0.43..0.64 rows=1 width=4) (actual time=0.011..0.011 rows=0 loops=107339)
+                    Index Cond: (id = ci.person_id)
+                    Filter: ((name ~~ '%Tim%'::text) AND ((gender)::text = 'm'::text))
+                    Rows Removed by Filter: 1
+        ->  Index Scan using title_pkey on title t  (cost=0.43..0.46 rows=1 width=21) (actual time=0.021..0.021 rows=1 loops=410)
+              Index Cond: (id = mi.movie_id)
+Planning time: 4.309 ms
+Execution time: 10086.059 ms

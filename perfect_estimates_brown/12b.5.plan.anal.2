@@ -1,0 +1,40 @@
+Aggregate  (cost=22179.86..22179.87 rows=1 width=64) (actual time=0.365..0.365 rows=1 loops=1)
+  ->  Nested Loop  (cost=6464.09..22179.84 rows=4 width=61) (actual time=0.115..0.353 rows=10 loops=1)
+        ->  Nested Loop  (cost=6463.96..22179.52 rows=2 width=65) (actual time=0.112..0.335 rows=10 loops=1)
+              ->  Nested Loop  (cost=6463.54..22179.07 rows=1 width=69) (actual time=0.107..0.245 rows=33 loops=1)
+                    Join Filter: (t.id = mc.movie_id)
+                    ->  Nested Loop  (cost=6463.11..22177.90 rows=2 width=73) (actual time=0.103..0.221 rows=2 loops=1)
+                          Join Filter: (mi.info_type_id = it1.id)
+                          Rows Removed by Join Filter: 219
+                          ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.016..0.017 rows=1 loops=1)
+                                Filter: ((info)::text = 'budget'::text)
+                                Rows Removed by Filter: 112
+                          ->  Nested Loop  (cost=6463.11..22172.72 rows=221 width=77) (actual time=0.057..0.185 rows=221 loops=1)
+                                Join Filter: (t.id = mi.movie_id)
+                                ->  Nested Loop  (cost=6462.68..22168.22 rows=2 width=25) (actual time=0.052..0.065 rows=2 loops=1)
+                                      ->  Nested Loop  (cost=6462.25..22162.36 rows=10 width=4) (actual time=0.023..0.027 rows=10 loops=1)
+                                            ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.012..0.012 rows=1 loops=1)
+                                                  Filter: ((info)::text = 'bottom 10 rank'::text)
+                                                  Rows Removed by Filter: 112
+                                            ->  Bitmap Heap Scan on movie_info_idx mi_idx  (cost=6462.25..18709.86 rows=345009 width=8) (actual time=0.009..0.011 rows=10 loops=1)
+                                                  Recheck Cond: (info_type_id = it2.id)
+                                                  Heap Blocks: exact=1
+                                                  ->  Bitmap Index Scan on info_type_id_movie_info_idx  (cost=0.00..6375.99 rows=345009 width=0) (actual time=0.006..0.006 rows=10 loops=1)
+                                                        Index Cond: (info_type_id = it2.id)
+                                      ->  Index Scan using title_pkey on title t  (cost=0.43..0.59 rows=1 width=21) (actual time=0.003..0.003 rows=0 loops=10)
+                                            Index Cond: (id = mi_idx.movie_id)
+                                            Filter: ((production_year > 2000) AND ((title ~~ 'Birdemic%'::text) OR (title ~~ '%Movie%'::text)))
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..1.74 rows=41 width=52) (actual time=0.004..0.033 rows=110 loops=2)
+                                      Index Cond: (movie_id = mi_idx.movie_id)
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.52 rows=5 width=12) (actual time=0.003..0.007 rows=16 loops=2)
+                          Index Cond: (movie_id = mi.movie_id)
+              ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.45 rows=1 width=4) (actual time=0.002..0.002 rows=0 loops=33)
+                    Index Cond: (id = mc.company_id)
+                    Filter: ((country_code)::text = '[us]'::text)
+                    Rows Removed by Filter: 1
+        ->  Index Scan using company_type_pkey on company_type ct  (cost=0.13..0.15 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=10)
+              Index Cond: (id = mc.company_type_id)
+              Filter: ((kind IS NOT NULL) AND (((kind)::text = 'production companies'::text) OR ((kind)::text = 'distributors'::text)))
+Planning time: 5.461 ms
+Execution time: 0.437 ms

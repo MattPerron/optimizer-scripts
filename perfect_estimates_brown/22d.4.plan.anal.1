@@ -1,0 +1,62 @@
+Aggregate  (cost=31328.52..31328.53 rows=1 width=96) (actual time=6289.413..6289.413 rows=1 loops=1)
+  ->  Nested Loop  (cost=8.91..31328.51 rows=1 width=42) (actual time=6.414..6245.486 rows=46281 loops=1)
+        Join Filter: (mi.info_type_id = it1.id)
+        Rows Removed by Join Filter: 8297
+        ->  Nested Loop  (cost=8.91..31326.09 rows=1 width=46) (actual time=6.409..5946.926 rows=54578 loops=1)
+              Join Filter: (t.id = mi.movie_id)
+              ->  Nested Loop  (cost=8.47..31324.22 rows=1 width=58) (actual time=6.352..1281.599 rows=56448 loops=1)
+                    ->  Nested Loop  (cost=8.05..31309.50 rows=33 width=43) (actual time=4.828..887.678 rows=75603 loops=1)
+                          Join Filter: (mc.company_type_id = ct.id)
+                          Rows Removed by Join Filter: 18060
+                          ->  Nested Loop  (cost=8.05..31304.23 rows=83 width=47) (actual time=4.824..845.395 rows=75603 loops=1)
+                                Join Filter: (t.id = mc.movie_id)
+                                ->  Nested Loop  (cost=7.62..29109.52 rows=3640 width=35) (actual time=4.803..680.156 rows=5949 loops=1)
+                                      Join Filter: (mi_idx.info_type_id = it2.id)
+                                      Rows Removed by Join Filter: 11943
+                                      ->  Seq Scan on info_type it2  (cost=0.00..2.41 rows=1 width=4) (actual time=0.017..0.021 rows=1 loops=1)
+                                            Filter: ((info)::text = 'rating'::text)
+                                            Rows Removed by Filter: 112
+                                      ->  Nested Loop  (cost=7.62..29028.83 rows=6262 width=39) (actual time=4.783..676.577 rows=17892 loops=1)
+                                            Join Filter: (t.id = mi_idx.movie_id)
+                                            ->  Nested Loop  (cost=7.20..24706.84 rows=8073 width=25) (actual time=4.760..581.758 rows=8073 loops=1)
+                                                  Join Filter: (t.kind_id = kt.id)
+                                                  Rows Removed by Join Filter: 4332
+                                                  ->  Nested Loop  (cost=7.20..24427.48 rows=9739 width=29) (actual time=4.700..574.905 rows=9739 loops=1)
+                                                        ->  Nested Loop  (cost=6.77..6261.07 rows=37091 width=4) (actual time=4.673..262.788 rows=37091 loops=1)
+                                                              ->  Seq Scan on keyword k  (cost=0.00..2961.55 rows=3 width=4) (actual time=1.535..33.161 rows=3 loops=1)
+                                                                    Filter: (keyword = ANY ('{murder,murder-in-title,blood,violence}'::text[]))
+                                                                    Rows Removed by Filter: 134167
+                                                              ->  Bitmap Heap Scan on movie_keyword mk  (cost=6.77..1096.83 rows=301 width=8) (actual time=3.561..73.850 rows=12364 loops=3)
+                                                                    Recheck Cond: (keyword_id = k.id)
+                                                                    Heap Blocks: exact=26312
+                                                                    ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..6.69 rows=301 width=0) (actual time=1.962..1.962 rows=12364 loops=3)
+                                                                          Index Cond: (keyword_id = k.id)
+                                                        ->  Index Scan using title_pkey on title t  (cost=0.43..0.49 rows=1 width=25) (actual time=0.008..0.008 rows=0 loops=37091)
+                                                              Index Cond: (id = mk.movie_id)
+                                                              Filter: (production_year > 2005)
+                                                              Rows Removed by Filter: 1
+                                                  ->  Materialize  (cost=0.00..1.10 rows=2 width=4) (actual time=0.000..0.000 rows=1 loops=9739)
+                                                        ->  Seq Scan on kind_type kt  (cost=0.00..1.09 rows=2 width=4) (actual time=0.005..0.006 rows=2 loops=1)
+                                                              Filter: ((kind)::text = ANY ('{movie,episode}'::text[]))
+                                                              Rows Removed by Filter: 5
+                                            ->  Index Scan using movie_id_movie_info_idx on movie_info_idx mi_idx  (cost=0.43..0.50 rows=3 width=14) (actual time=0.010..0.011 rows=2 loops=8073)
+                                                  Index Cond: (movie_id = mk.movie_id)
+                                                  Filter: (info < '8.5'::text)
+                                                  Rows Removed by Filter: 0
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.54 rows=5 width=12) (actual time=0.013..0.023 rows=13 loops=5949)
+                                      Index Cond: (movie_id = mk.movie_id)
+                          ->  Materialize  (cost=0.00..1.06 rows=4 width=4) (actual time=0.000..0.000 rows=1 loops=75603)
+                                ->  Seq Scan on company_type ct  (cost=0.00..1.04 rows=4 width=4) (actual time=0.002..0.002 rows=2 loops=1)
+                    ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.45 rows=1 width=23) (actual time=0.005..0.005 rows=1 loops=75603)
+                          Index Cond: (id = mc.company_id)
+                          Filter: ((country_code)::text <> '[us]'::text)
+                          Rows Removed by Filter: 0
+              ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..1.84 rows=2 width=8) (actual time=0.068..0.082 rows=1 loops=56448)
+                    Index Cond: (movie_id = mk.movie_id)
+                    Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Danish,Norwegian,German,USA,American}'::text[]))
+                    Rows Removed by Filter: 154
+        ->  Seq Scan on info_type it1  (cost=0.00..2.41 rows=1 width=4) (actual time=0.003..0.005 rows=1 loops=54578)
+              Filter: ((info)::text = 'countries'::text)
+              Rows Removed by Filter: 23
+Planning time: 29.946 ms
+Execution time: 6289.521 ms

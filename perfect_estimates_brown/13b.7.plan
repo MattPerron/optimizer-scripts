@@ -1,0 +1,37 @@
+Aggregate
+  ->  Nested Loop
+        Join Filter: (mi.info_type_id = it2.id)
+        ->  Seq Scan on info_type it2
+              Filter: ((info)::text = 'release dates'::text)
+        ->  Nested Loop
+              Join Filter: (t.id = mi.movie_id)
+              ->  Nested Loop
+                    ->  Hash Join
+                          Hash Cond: (mc.company_type_id = ct.id)
+                          ->  Nested Loop
+                                Join Filter: (t.id = mc.movie_id)
+                                ->  Nested Loop
+                                      Join Filter: (miidx.info_type_id = it.id)
+                                      ->  Seq Scan on info_type it
+                                            Filter: ((info)::text = 'rating'::text)
+                                      ->  Nested Loop
+                                            ->  Nested Loop
+                                                  ->  Seq Scan on kind_type kt
+                                                        Filter: ((kind)::text = 'movie'::text)
+                                                  ->  Bitmap Heap Scan on title t
+                                                        Recheck Cond: (kind_id = kt.id)
+                                                        Filter: ((title <> ''::text) AND ((title ~~ '%Champion%'::text) OR (title ~~ '%Loser%'::text)))
+                                                        ->  Bitmap Index Scan on kind_id_title
+                                                              Index Cond: (kind_id = kt.id)
+                                            ->  Index Scan using movie_id_movie_info_idx on movie_info_idx miidx
+                                                  Index Cond: (movie_id = t.id)
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                      Index Cond: (movie_id = miidx.movie_id)
+                          ->  Hash
+                                ->  Seq Scan on company_type ct
+                                      Filter: ((kind)::text = 'production companies'::text)
+                    ->  Index Scan using company_name_pkey on company_name cn
+                          Index Cond: (id = mc.company_id)
+                          Filter: ((country_code)::text = '[us]'::text)
+              ->  Index Scan using movie_id_movie_info on movie_info mi
+                    Index Cond: (movie_id = mc.movie_id)

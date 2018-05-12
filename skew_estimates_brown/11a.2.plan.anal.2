@@ -1,0 +1,44 @@
+Aggregate  (cost=3757.97..3757.98 rows=1 width=96) (actual time=84.686..84.686 rows=1 loops=1)
+  ->  Nested Loop  (cost=8.33..3757.96 rows=1 width=48) (actual time=3.004..84.421 rows=310 loops=1)
+        Join Filter: (mc.company_type_id = ct.id)
+        Rows Removed by Join Filter: 20
+        ->  Nested Loop  (cost=8.33..3756.90 rows=1 width=52) (actual time=3.000..83.888 rows=330 loops=1)
+              ->  Nested Loop  (cost=7.91..3756.44 rows=1 width=37) (actual time=2.892..81.722 rows=705 loops=1)
+                    Join Filter: (ml.movie_id = mc.movie_id)
+                    ->  Nested Loop  (cost=7.48..3755.87 rows=1 width=41) (actual time=2.884..80.762 rows=152 loops=1)
+                          Join Filter: (ml.movie_id = t.id)
+                          ->  Nested Loop  (cost=7.05..3755.36 rows=1 width=20) (actual time=2.851..80.109 rows=199 loops=1)
+                                Join Filter: (ml.link_type_id = lt.id)
+                                Rows Removed by Join Filter: 303
+                                ->  Seq Scan on link_type lt  (cost=0.00..1.23 rows=1 width=16) (actual time=0.005..0.009 rows=2 loops=1)
+                                      Filter: ((link)::text ~~ '%follow%'::text)
+                                      Rows Removed by Filter: 16
+                                ->  Nested Loop  (cost=7.05..3754.01 rows=10 width=12) (actual time=2.840..40.012 rows=251 loops=2)
+                                      ->  Nested Loop  (cost=6.77..3739.98 rows=33 width=4) (actual time=2.833..25.738 rows=10544 loops=2)
+                                            ->  Seq Scan on keyword k  (cost=0.00..2626.12 rows=1 width=4) (actual time=0.786..13.914 rows=1 loops=2)
+                                                  Filter: (keyword = 'sequel'::text)
+                                                  Rows Removed by Filter: 134169
+                                            ->  Bitmap Heap Scan on movie_keyword mk  (cost=6.77..1110.84 rows=301 width=8) (actual time=2.044..10.010 rows=10544 loops=2)
+                                                  Recheck Cond: (keyword_id = k.id)
+                                                  Heap Blocks: exact=11140
+                                                  ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..6.69 rows=301 width=0) (actual time=1.096..1.096 rows=10544 loops=2)
+                                                        Index Cond: (keyword_id = k.id)
+                                      ->  Index Scan using movie_id_movie_link on movie_link ml  (cost=0.29..0.38 rows=5 width=8) (actual time=0.001..0.001 rows=0 loops=21088)
+                                            Index Cond: (movie_id = mk.movie_id)
+                          ->  Index Scan using title_pkey on title t  (cost=0.43..0.49 rows=1 width=21) (actual time=0.003..0.003 rows=1 loops=199)
+                                Index Cond: (id = mk.movie_id)
+                                Filter: ((production_year >= 1950) AND (production_year <= 2000))
+                                Rows Removed by Filter: 0
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.54 rows=3 width=12) (actual time=0.003..0.005 rows=5 loops=152)
+                          Index Cond: (movie_id = mk.movie_id)
+                          Filter: (note IS NULL)
+                          Rows Removed by Filter: 1
+              ->  Index Scan using company_name_pkey on company_name cn  (cost=0.42..0.46 rows=1 width=23) (actual time=0.003..0.003 rows=0 loops=705)
+                    Index Cond: (id = mc.company_id)
+                    Filter: (((country_code)::text <> '[pl]'::text) AND ((name ~~ '%Film%'::text) OR (name ~~ '%Warner%'::text)))
+                    Rows Removed by Filter: 1
+        ->  Seq Scan on company_type ct  (cost=0.00..1.05 rows=1 width=4) (actual time=0.001..0.001 rows=1 loops=330)
+              Filter: ((kind)::text = 'production companies'::text)
+              Rows Removed by Filter: 1
+Planning time: 5.588 ms
+Execution time: 84.783 ms

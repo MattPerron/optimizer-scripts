@@ -1,0 +1,27 @@
+Aggregate  (cost=22322.55..22322.56 rows=1 width=68) (actual time=5.450..5.450 rows=1 loops=1)
+  ->  Nested Loop  (cost=6463.24..22322.43 rows=16 width=45) (actual time=1.632..5.439 rows=3 loops=1)
+        ->  Nested Loop  (cost=6463.11..22322.25 rows=1 width=49) (actual time=1.624..5.427 rows=3 loops=1)
+              Join Filter: (mc.movie_id = t.id)
+              ->  Nested Loop  (cost=6462.68..22319.29 rows=5 width=36) (actual time=0.196..5.358 rows=23 loops=1)
+                    ->  Nested Loop  (cost=6462.25..22162.36 rows=250 width=4) (actual time=0.049..0.131 rows=250 loops=1)
+                          ->  Seq Scan on info_type it  (cost=0.00..2.41 rows=1 width=4) (actual time=0.016..0.017 rows=1 loops=1)
+                                Filter: ((info)::text = 'top 250 rank'::text)
+                                Rows Removed by Filter: 112
+                          ->  Bitmap Heap Scan on movie_info_idx mi_idx  (cost=6462.25..18709.86 rows=345009 width=8) (actual time=0.031..0.066 rows=250 loops=1)
+                                Recheck Cond: (info_type_id = it.id)
+                                Heap Blocks: exact=2
+                                ->  Bitmap Index Scan on info_type_id_movie_info_idx  (cost=0.00..6375.99 rows=345009 width=0) (actual time=0.020..0.020 rows=250 loops=1)
+                                      Index Cond: (info_type_id = it.id)
+                    ->  Index Scan using movie_id_movie_companies on movie_companies mc  (cost=0.43..0.62 rows=1 width=32) (actual time=0.021..0.021 rows=0 loops=250)
+                          Index Cond: (movie_id = mi_idx.movie_id)
+                          Filter: ((note !~~ '%(as Metro-Goldwyn-Mayer Pictures)%'::text) AND (note ~~ '%(co-production)%'::text))
+                          Rows Removed by Filter: 33
+              ->  Index Scan using title_pkey on title t  (cost=0.43..0.58 rows=1 width=25) (actual time=0.003..0.003 rows=0 loops=23)
+                    Index Cond: (id = mi_idx.movie_id)
+                    Filter: (production_year > 2010)
+                    Rows Removed by Filter: 1
+        ->  Index Scan using company_type_pkey on company_type ct  (cost=0.13..0.15 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=3)
+              Index Cond: (id = mc.company_type_id)
+              Filter: ((kind)::text = 'production companies'::text)
+Planning time: 1.306 ms
+Execution time: 5.539 ms

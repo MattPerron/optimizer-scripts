@@ -1,0 +1,44 @@
+Aggregate
+  ->  Hash Join
+        Hash Cond: (mi.movie_id = t.id)
+        ->  Nested Loop
+              ->  Seq Scan on info_type it
+                    Filter: ((info)::text = 'release dates'::text)
+              ->  Bitmap Heap Scan on movie_info mi
+                    Recheck Cond: (info_type_id = it.id)
+                    ->  Bitmap Index Scan on info_type_id_movie_info
+                          Index Cond: (info_type_id = it.id)
+        ->  Hash
+              ->  Hash Join
+                    Hash Cond: (an.person_id = n.id)
+                    ->  Seq Scan on aka_name an
+                    ->  Hash
+                          ->  Hash Join
+                                Hash Cond: (ci.person_id = n.id)
+                                ->  Hash Join
+                                      Hash Cond: (ci.person_role_id = chn.id)
+                                      ->  Hash Join
+                                            Hash Cond: (mc.company_id = cn.id)
+                                            ->  Hash Join
+                                                  Hash Cond: (mc.movie_id = t.id)
+                                                  ->  Seq Scan on movie_companies mc
+                                                  ->  Hash
+                                                        ->  Hash Join
+                                                              Hash Cond: (ci.movie_id = t.id)
+                                                              ->  Nested Loop
+                                                                    ->  Seq Scan on role_type rt
+                                                                          Filter: ((role)::text = 'actress'::text)
+                                                                    ->  Index Scan using role_id_cast_info on cast_info ci
+                                                                          Index Cond: (role_id = rt.id)
+                                                                          Filter: (note = ANY ('{(voice),"(voice: Japanese version)","(voice) (uncredited)","(voice: English version)"}'::text[]))
+                                                              ->  Hash
+                                                                    ->  Seq Scan on title t
+                                                                          Filter: (production_year > 2000)
+                                            ->  Hash
+                                                  ->  Seq Scan on company_name cn
+                                                        Filter: ((country_code)::text = '[us]'::text)
+                                      ->  Hash
+                                            ->  Seq Scan on char_name chn
+                                ->  Hash
+                                      ->  Seq Scan on name n
+                                            Filter: ((gender)::text = 'f'::text)
