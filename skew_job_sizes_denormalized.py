@@ -2,6 +2,7 @@ import os
 import sys
 import re
 import struct
+from sets import Set
 import psycopg2 as pg
 
 
@@ -71,7 +72,7 @@ def main():
         with open('job_sizes', 'rb') as fin:
             for query_num in range(NUM_QUERIES):
                 for comb in range(NUM_COMBS):
-                    if bin(comb).count("1") != 2:
+                    if bin(comb).count("1") < 2 or bin(comb).count("1") > 4:
                         continue
                     fin.seek((query_num*NUM_COMBS+comb)*8, 0)
                     fout.seek((query_num*NUM_COMBS+comb)*8, 0)
@@ -95,7 +96,8 @@ def get_estimate(query, comb_number, cur, frequencies, table_counts, query_num):
     large_att = None
     aliases = []
     alias_mapping = {}
-    join_condition = ""
+    join_conditions = []
+    tables = Set()
     pattern = re.compile("(.*\..*_id \= .*\.id)|(.*\.id \= .*\..*_id)|(.*\..*_id \= .*\..*_id)")
 
     outquery = "SELECT * FROM\n"
@@ -131,7 +133,7 @@ def get_estimate(query, comb_number, cur, frequencies, table_counts, query_num):
                         counts += 1
                 if counts > 1 and pattern.match(line):
                     splitline = re.split("[ |\.]", line.strip())
-                    join_condition =  line[6:]
+                    join_conditions.append(line[6:])
                     if splitline[2].count("_id") == 0: 
                         small = splitline[1]
                         small_att = splitline[2]
@@ -142,6 +144,8 @@ def get_estimate(query, comb_number, cur, frequencies, table_counts, query_num):
                         small_att = splitline[5]
                         large = splitline[1]
                         large_att = splitline[2]
+                    tables.add(small)
+                    tables.add(large)
                     continue
             if add_and and include_line:
                 outquery += "AND "
@@ -170,47 +174,41 @@ def get_estimate(query, comb_number, cur, frequencies, table_counts, query_num):
     outquery += ";"
     if small == None or large == None:
         return -1
-    first = alias_mapping[small]
-    first_alias = small
-    second = alias_mapping[large]
-    second_alias = large
-    if second > first:
-        temp = first
-        first = second
-        second = temp
-        temp = first_alias
-        first_alias = second_alias
-        second_alias = temp
-    normalized_table_name = first+"_j_"+second
+    join_tables = []
+    for table in tables:
+        join_tables.append((alias_mapping[table], table))
+    join_tables.sort(key=lambda x: x[0])
+    normalized_table_name = "_j_".join([x[0] for x in join_tables])
     cur.execute("select exists (select 1 from information_schema.tables where table_catalog='imdb' and table_schema='public' and table_name = '{}');".format(normalized_table_name))
     join_table_exists = cur.fetchone()[0]
     if not join_table_exists:
         column_names = []
-        cur.execute("select column_name from information_schema.columns where table_name='{}'".format(first));
-        res = cur.fetchall()
-        for column in res:
-            column_names.append(first_alias+"."+column[0]+" AS "+first+"_t_"+column[0])
-        cur.execute("select column_name from information_schema.columns where table_name='{}'".format(second));
-        res = cur.fetchall()
-        for column in res:
-            column_names.append(second_alias+"."+column[0]+" AS "+second+"_t_"+column[0])
+        for table in join_tables:
+            cur.execute("select column_name from information_schema.columns where table_name='{}'".format(table[0]));
+            res = cur.fetchall()
+            for column in res:
+                column_names.append(table[1]+"."+column[0]+" AS "+table[0]+"_t_"+column[0])
         print "creating table ", normalized_table_name
-        cur.execute("select {}  into {} from {} as {}, {} as {} where {};".format(", ".join(column_names), normalized_table_name, first, first_alias, second, second_alias, join_condition));
+        creation_string = "SELECT {} \n INTO {} \n FROM {} \n WHERE {};".format(",\n  ".join(column_names), normalized_table_name, ",\n  ".join(["{} AS {}".format(x[0], x[1]) for x in join_tables]), "\n  AND ".join(join_conditions))
+        print creation_string
+
+        cur.execute(creation_string);
         print "created table ", normalized_table_name
         cur.execute("begin; analyze {}; commit;".format(normalized_table_name));
         print "analayzed table ", normalized_table_name
-        cur.connection.commit();
 
+    print "\nQuery: ", query_num 
+    print "FULL: "
+    print query
     print "BEFORE:"
     print outquery
-    outquery = outquery.replace(" "+first_alias+".", " "+first+"_t_")
-    outquery = outquery.replace("("+first_alias+".", "("+first+"_t_")
-    outquery = outquery.replace(" "+second_alias+".", " "+second+"_t_")
-    outquery = outquery.replace("("+second_alias+".", "("+second+"_t_")
+    for table in join_tables:
+        outquery = outquery.replace(" "+table[1]+".", " "+table[0]+"_t_")
+        outquery = outquery.replace("("+table[1]+".", "("+table[0]+"_t_")
     outquery_lines = outquery.split("\n")
-    outquery_lines = ["EXPLAIN"]+outquery_lines[:1]+[normalized_table_name]+outquery_lines[3:]
+    outquery_lines = ["EXPLAIN"]+outquery_lines[:1]+[normalized_table_name]+outquery_lines[len(join_tables)+1:]
     outquery = "\n".join(outquery_lines)
-    print query_num
+    print "AFTER:"
     print outquery
     cur.execute(outquery)
     firstline = cur.fetchone()[0].split(" ")
@@ -218,7 +216,6 @@ def get_estimate(query, comb_number, cur, frequencies, table_counts, query_num):
     for blah in firstline:
         if blah.find("rows")>=0:
             est = long(blah.split("=")[1])
-    print est
     return est
 
     '''
