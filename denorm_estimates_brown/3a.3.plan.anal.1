@@ -1,0 +1,23 @@
+Aggregate  (cost=26167.01..26167.02 rows=1 width=32) (actual time=147.745..147.745 rows=1 loops=1)
+  ->  Nested Loop  (cost=7.67..26166.93 rows=33 width=17) (actual time=4.437..147.576 rows=206 loops=1)
+        Join Filter: (t.id = mi.movie_id)
+        ->  Nested Loop  (cost=7.23..20351.40 rows=3368 width=25) (actual time=3.874..83.825 rows=2235 loops=1)
+              ->  Nested Loop  (cost=6.80..16332.76 rows=8205 width=4) (actual time=3.371..41.053 rows=12951 loops=1)
+                    ->  Seq Scan on keyword k  (cost=0.00..2626.12 rows=13 width=4) (actual time=1.279..24.625 rows=30 loops=1)
+                          Filter: (keyword ~~ '%sequel%'::text)
+                          Rows Removed by Filter: 134140
+                    ->  Bitmap Heap Scan on movie_keyword mk  (cost=6.80..1051.30 rows=306 width=8) (actual time=0.090..0.468 rows=432 loops=30)
+                          Recheck Cond: (keyword_id = k.id)
+                          Heap Blocks: exact=6979
+                          ->  Bitmap Index Scan on keyword_id_movie_keyword  (cost=0.00..6.73 rows=306 width=0) (actual time=0.051..0.051 rows=432 loops=30)
+                                Index Cond: (keyword_id = k.id)
+              ->  Index Scan using title_pkey on title t  (cost=0.43..0.49 rows=1 width=21) (actual time=0.003..0.003 rows=0 loops=12951)
+                    Index Cond: (id = mk.movie_id)
+                    Filter: (production_year > 2005)
+                    Rows Removed by Filter: 1
+        ->  Index Scan using movie_id_movie_info on movie_info mi  (cost=0.43..1.71 rows=1 width=4) (actual time=0.027..0.028 rows=0 loops=2235)
+              Index Cond: (movie_id = mk.movie_id)
+              Filter: (info = ANY ('{Sweden,Norway,Germany,Denmark,Swedish,Denish,Norwegian,German}'::text[]))
+              Rows Removed by Filter: 45
+Planning time: 1.019 ms
+Execution time: 147.796 ms

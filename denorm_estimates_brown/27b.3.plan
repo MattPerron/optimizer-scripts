@@ -1,0 +1,52 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (ml.movie_id = mi.movie_id)
+              ->  Nested Loop
+                    ->  Nested Loop
+                          ->  Nested Loop
+                                ->  Nested Loop
+                                      Join Filter: (ml.movie_id = mk.movie_id)
+                                      ->  Nested Loop
+                                            ->  Nested Loop
+                                                  Join Filter: (ml.movie_id = mc.movie_id)
+                                                  ->  Nested Loop
+                                                        Join Filter: (ml.movie_id = t.id)
+                                                        ->  Merge Join
+                                                              Merge Cond: (cc.movie_id = ml.movie_id)
+                                                              ->  Index Scan using movie_id_complete_cast on complete_cast cc
+                                                              ->  Sort
+                                                                    Sort Key: ml.movie_id
+                                                                    ->  Nested Loop
+                                                                          ->  Seq Scan on link_type lt
+                                                                                Filter: ((link)::text ~~ '%follow%'::text)
+                                                                          ->  Bitmap Heap Scan on movie_link ml
+                                                                                Recheck Cond: (link_type_id = lt.id)
+                                                                                ->  Bitmap Index Scan on link_type_id_movie_link
+                                                                                      Index Cond: (link_type_id = lt.id)
+                                                        ->  Index Scan using title_pkey on title t
+                                                              Index Cond: (id = cc.movie_id)
+                                                              Filter: (production_year = 1998)
+                                                  ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                                        Index Cond: (movie_id = cc.movie_id)
+                                                        Filter: (note IS NULL)
+                                            ->  Index Scan using company_name_pkey on company_name cn
+                                                  Index Cond: (id = mc.company_id)
+                                                  Filter: (((country_code)::text <> '[pl]'::text) AND ((name ~~ '%Film%'::text) OR (name ~~ '%Warner%'::text)))
+                                      ->  Index Scan using movie_id_movie_keyword on movie_keyword mk
+                                            Index Cond: (movie_id = mc.movie_id)
+                                ->  Index Scan using keyword_pkey on keyword k
+                                      Index Cond: (id = mk.keyword_id)
+                                      Filter: (keyword = 'sequel'::text)
+                          ->  Index Scan using company_type_pkey on company_type ct
+                                Index Cond: (id = mc.company_type_id)
+                                Filter: ((kind)::text = 'production companies'::text)
+                    ->  Index Scan using comp_cast_type_pkey on comp_cast_type cct1
+                          Index Cond: (id = cc.subject_id)
+                          Filter: ((kind)::text = ANY ('{cast,crew}'::text[]))
+              ->  Index Scan using movie_id_movie_info on movie_info mi
+                    Index Cond: (movie_id = mk.movie_id)
+                    Filter: (info = ANY ('{Sweden,Germany,Swedish,German}'::text[]))
+        ->  Index Scan using comp_cast_type_pkey on comp_cast_type cct2
+              Index Cond: (id = cc.status_id)
+              Filter: ((kind)::text = 'complete'::text)

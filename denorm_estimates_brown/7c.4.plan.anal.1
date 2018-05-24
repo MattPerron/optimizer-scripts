@@ -1,0 +1,44 @@
+Aggregate  (cost=64499.52..64499.53 rows=1 width=64) (actual time=6531.330..6531.330 rows=1 loops=1)
+  ->  Nested Loop  (cost=63879.08..64499.50 rows=4 width=111) (actual time=4209.777..5916.541 rows=68185 loops=1)
+        ->  Hash Join  (cost=63878.65..64496.29 rows=7 width=119) (actual time=4209.685..5530.747 rows=109842 loops=1)
+              Hash Cond: (ml.link_type_id = lt.id)
+              ->  Hash Join  (cost=63877.33..64494.34 rows=52 width=123) (actual time=4209.664..5485.788 rows=127027 loops=1)
+                    Hash Cond: (ml.linked_movie_id = ci.movie_id)
+                    ->  Seq Scan on movie_link ml  (cost=0.00..462.97 rows=29997 width=8) (actual time=0.005..4.758 rows=29997 loops=1)
+                    ->  Hash  (cost=63714.29..63714.29 rows=13043 width=115) (actual time=4209.540..4209.540 rows=1618304 loops=1)
+                          Buckets: 524288 (originally 16384)  Batches: 4 (originally 1)  Memory Usage: 405505kB
+                          ->  Nested Loop  (cost=2493.33..63714.29 rows=13043 width=115) (actual time=19.413..2120.429 rows=1618304 loops=1)
+                                ->  Nested Loop  (cost=2492.77..59552.89 rows=236 width=123) (actual time=19.392..1236.798 rows=12595 loops=1)
+                                      ->  Nested Loop  (cost=2492.34..58218.72 rows=1462 width=104) (actual time=19.286..733.034 rows=72979 loops=1)
+                                            ->  Nested Loop  (cost=2491.91..55266.95 rows=2534 width=100) (actual time=19.259..354.991 rows=84183 loops=1)
+                                                  ->  Seq Scan on info_type it  (cost=0.00..2.41 rows=1 width=4) (actual time=0.005..0.018 rows=1 loops=1)
+                                                        Filter: ((info)::text = 'mini biography'::text)
+                                                        Rows Removed by Filter: 112
+                                                  ->  Bitmap Heap Scan on person_info pi  (cost=2491.91..55227.16 rows=3737 width=104) (actual time=19.252..338.695 rows=84183 loops=1)
+                                                        Recheck Cond: (info_type_id = it.id)
+                                                        Filter: (note IS NOT NULL)
+                                                        Rows Removed by Filter: 1
+                                                        Heap Blocks: exact=40387
+                                                        ->  Bitmap Index Scan on info_type_id_person_info  (cost=0.00..2490.98 rows=134740 width=0) (actual time=10.457..10.457 rows=84184 loops=1)
+                                                              Index Cond: (info_type_id = it.id)
+                                            ->  Index Scan using person_id_aka_name on aka_name an  (cost=0.42..1.14 rows=2 width=4) (actual time=0.003..0.004 rows=1 loops=84183)
+                                                  Index Cond: (person_id = pi.person_id)
+                                                  Filter: ((name IS NOT NULL) AND ((name ~~ '%a%'::text) OR (name ~~ 'A%'::text)))
+                                                  Rows Removed by Filter: 0
+                                      ->  Index Scan using name_pkey on name n  (cost=0.43..0.91 rows=1 width=19) (actual time=0.006..0.006 rows=0 loops=72979)
+                                            Index Cond: (id = an.person_id)
+                                            Filter: (((name_pcode_cf)::text >= 'A'::text) AND ((name_pcode_cf)::text <= 'F'::text) AND (((gender)::text = 'm'::text) OR (((gender)::text = 'f'::text) AND (name ~~ 'A%'::text))))
+                                            Rows Removed by Filter: 1
+                                ->  Index Scan using person_id_cast_info on cast_info ci  (cost=0.56..12.51 rows=512 width=8) (actual time=0.009..0.043 rows=128 loops=12595)
+                                      Index Cond: (person_id = n.id)
+              ->  Hash  (cost=1.27..1.27 rows=4 width=4) (actual time=0.014..0.014 rows=4 loops=1)
+                    Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                    ->  Seq Scan on link_type lt  (cost=0.00..1.27 rows=4 width=4) (actual time=0.007..0.011 rows=4 loops=1)
+                          Filter: ((link)::text = ANY ('{references,"referenced in",features,"featured in"}'::text[]))
+                          Rows Removed by Filter: 14
+        ->  Index Scan using title_pkey on title t  (cost=0.43..0.46 rows=1 width=4) (actual time=0.003..0.003 rows=1 loops=109842)
+              Index Cond: (id = ci.movie_id)
+              Filter: ((production_year >= 1980) AND (production_year <= 2010))
+              Rows Removed by Filter: 0
+Planning time: 5.474 ms
+Execution time: 6532.945 ms

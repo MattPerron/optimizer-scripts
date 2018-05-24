@@ -1,0 +1,32 @@
+Aggregate
+  ->  Nested Loop
+        ->  Nested Loop
+              Join Filter: (ml.link_type_id = lt.id)
+              ->  Nested Loop
+                    Join Filter: (ml.movie_id = t.id)
+                    ->  Hash Join
+                          Hash Cond: (mc.company_type_id = ct.id)
+                          ->  Merge Join
+                                Merge Cond: (ml.movie_id = mc.movie_id)
+                                ->  Merge Join
+                                      Merge Cond: (mk.movie_id = ml.movie_id)
+                                      ->  Nested Loop
+                                            Join Filter: (k.id = mk.keyword_id)
+                                            ->  Index Scan using movie_id_movie_keyword on movie_keyword mk
+                                            ->  Materialize
+                                                  ->  Seq Scan on keyword k
+                                                        Filter: (keyword = ANY ('{sequel,revenge,based-on-novel}'::text[]))
+                                      ->  Index Scan using movie_id_movie_link on movie_link ml
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                      Filter: (note IS NOT NULL)
+                          ->  Hash
+                                ->  Seq Scan on company_type ct
+                                      Filter: ((kind IS NOT NULL) AND ((kind)::text <> 'production companies'::text))
+                    ->  Index Scan using title_pkey on title t
+                          Index Cond: (id = mk.movie_id)
+                          Filter: (production_year > 1950)
+              ->  Materialize
+                    ->  Seq Scan on link_type lt
+        ->  Index Scan using company_name_pkey on company_name cn
+              Index Cond: (id = mc.company_id)
+              Filter: ((country_code)::text <> '[pl]'::text)

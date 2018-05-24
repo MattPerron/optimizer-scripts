@@ -1,0 +1,35 @@
+Aggregate
+  ->  Hash Join
+        Hash Cond: (ml.link_type_id = lt.id)
+        ->  Nested Loop
+              Join Filter: (ml.movie_id = t.id)
+              ->  Nested Loop
+                    ->  Hash Join
+                          Hash Cond: (mc.company_type_id = ct.id)
+                          ->  Nested Loop
+                                Join Filter: (ml.movie_id = mc.movie_id)
+                                ->  Hash Join
+                                      Hash Cond: (ml.movie_id = mk.movie_id)
+                                      ->  Seq Scan on movie_link ml
+                                      ->  Hash
+                                            ->  Nested Loop
+                                                  ->  Seq Scan on keyword k
+                                                        Filter: (keyword = ANY ('{sequel,revenge,based-on-novel}'::text[]))
+                                                  ->  Bitmap Heap Scan on movie_keyword mk
+                                                        Recheck Cond: (keyword_id = k.id)
+                                                        ->  Bitmap Index Scan on keyword_id_movie_keyword
+                                                              Index Cond: (keyword_id = k.id)
+                                ->  Index Scan using movie_id_movie_companies on movie_companies mc
+                                      Index Cond: (movie_id = mk.movie_id)
+                                      Filter: (note IS NOT NULL)
+                          ->  Hash
+                                ->  Seq Scan on company_type ct
+                                      Filter: ((kind IS NOT NULL) AND ((kind)::text <> 'production companies'::text))
+                    ->  Index Scan using company_name_pkey on company_name cn
+                          Index Cond: (id = mc.company_id)
+                          Filter: ((country_code)::text <> '[pl]'::text)
+              ->  Index Scan using title_pkey on title t
+                    Index Cond: (id = mk.movie_id)
+                    Filter: (production_year > 1950)
+        ->  Hash
+              ->  Seq Scan on link_type lt
