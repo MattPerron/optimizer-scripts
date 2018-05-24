@@ -11,14 +11,13 @@ NUM_COMBS = 150000
 LONG_SIZE = 8
 
 def main():
-    conn = pg.connect("host=localhost user=matt dbname=matt")
+    conn = pg.connect("host=localhost user=mperron dbname=imdb")
     conn.autocommit = True
     cur = conn.cursor()
     #get most frequent values, and frequencies
     frequencies = {}
     table_counts = {}
-    cur.execute("select tablename from pg_tables where schemaname = 'public'");
-    job_directory = '/home/matt/join-order-benchmark'
+    job_directory = '/data/mperron/join-order-benchmark'
     file_letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
     file_id = 0;
     file_contents = {}
@@ -63,11 +62,13 @@ def main():
                             if old_num < 0 or new_num >= 0:
                                 continue
                             curr_join_table = get_join_table(file_contents[query_num], comb, cur, frequencies, table_counts, query_num)
-                            if curr_join_table in join_tables:
+
+                            if curr_join_table in join_tables or curr_join_table is None:
                                 continue
                             break
-                    if curr_join_table == None:
+                    if curr_join_table is None:
                         break
+                    print curr_join_table
                     join_tables.append(curr_join_table)
                     for query_num in range(NUM_QUERIES):
                         for comb in range(NUM_COMBS):
@@ -188,18 +189,19 @@ def get_estimate(query, comb_number, cur, frequencies, table_counts, query_num, 
     normalized_table_name = "_j_".join([x[0] for x in join_tables])
     if target_table != normalized_table_name:
         return -1
-    cur.execute("select exists (select 1 from information_schema.tables where table_catalog='matt' and table_schema='public' and table_name = '{}');".format(normalized_table_name))
+    cur.execute("select exists (select 1 from information_schema.tables where table_catalog='imdb' and table_schema='public' and table_name = '{}');".format(normalized_table_name))
     join_table_exists = cur.fetchone()[0]
     if not join_table_exists:
         print "Join table ", normalized_table_name, "should exist but doesn't", target_table
         quit(1)
-
+    print outquery
     for table in join_tables:
         outquery = outquery.replace(" "+table[1]+".", " "+table[0]+"_t_")
         outquery = outquery.replace("("+table[1]+".", "("+table[0]+"_t_")
     outquery_lines = outquery.split("\n")
     outquery_lines = ["EXPLAIN"]+outquery_lines[:1]+[normalized_table_name]+outquery_lines[len(join_tables)+1:]
     outquery = "\n".join(outquery_lines)
+    print outquery
     cur.execute(outquery)
     firstline = cur.fetchone()[0].split(" ")
     est = -1 
@@ -209,6 +211,7 @@ def get_estimate(query, comb_number, cur, frequencies, table_counts, query_num, 
     return est
 
 def get_join_table(query, comb_number, cur, frequencies, table_counts, query_num):
+    print "BLAH\n\n"
     count_tables = bin(comb_number).count("1")
     fromfound = False
     wherefound = False
@@ -224,6 +227,7 @@ def get_join_table(query, comb_number, cur, frequencies, table_counts, query_num
     join_conditions = []
     tables = Set()
     pattern = re.compile("(.*\..*_id \= .*\.id)|(.*\.id \= .*\..*_id)|(.*\..*_id \= .*\..*_id)")
+    k_fk_count = 0
 
     outquery = "SELECT * FROM\n"
     for line in query.split("\n"):
@@ -259,6 +263,9 @@ def get_join_table(query, comb_number, cur, frequencies, table_counts, query_num
                 if counts > 1 and pattern.match(line):
                     splitline = re.split("[ |\.]", line.strip())
                     join_conditions.append(line[6:])
+                    print line
+                    if line.count("_id") < 2:
+                        k_fk_count+= 1
                     if splitline[2].count("_id") == 0: 
                         small = splitline[1]
                         small_att = splitline[2]
@@ -271,7 +278,6 @@ def get_join_table(query, comb_number, cur, frequencies, table_counts, query_num
                         large_att = splitline[2]
                     tables.add(small)
                     tables.add(large)
-                    continue
             if add_and and include_line:
                 outquery += "AND "
             if include_line:
@@ -284,6 +290,7 @@ def get_join_table(query, comb_number, cur, frequencies, table_counts, query_num
             if line.find("FROM") >= 0:
                 line = line[5:]
             if (comb_number & (1 << total_tables)):
+                print line
                 outquery += line
                 included_tables+= 1
                 if included_tables < count_tables:
@@ -298,13 +305,20 @@ def get_join_table(query, comb_number, cur, frequencies, table_counts, query_num
             total_tables+=1
     outquery += ";"
     if small == None or large == None:
-        return -1
+        return None
     join_tables = []
+    all_tables = Set()
     for table in tables:
+        all_tables.add(alias_mapping[table])
         join_tables.append((alias_mapping[table], table))
+    if len(join_tables) > len(all_tables) or k_fk_count < len(join_tables)-2 or len(join_tables) < bin(comb_number).count('1'):
+        return None
     join_tables.sort(key=lambda x: x[0])
     normalized_table_name = "_j_".join([x[0] for x in join_tables])
-    cur.execute("select exists (select 1 from information_schema.tables where table_catalog='matt' and table_schema='public' and table_name = '{}');".format(normalized_table_name))
+    print query
+    print join_tables, all_tables, bin(comb_number).count('1')
+    print "trying to create", normalized_table_name
+    cur.execute("select exists (select 1 from information_schema.tables where table_catalog='imdb' and table_schema='public' and table_name = '{}');".format(normalized_table_name))
     join_table_exists = cur.fetchone()[0]
     if not join_table_exists:
         column_names = []
@@ -313,11 +327,13 @@ def get_join_table(query, comb_number, cur, frequencies, table_counts, query_num
             res = cur.fetchall()
             for column in res:
                 column_names.append(table[1]+"."+column[0]+" AS "+table[0]+"_t_"+column[0])
+        print "creating table ", normalized_table_name, "for query", query_num
         creation_string = "SELECT {} \n INTO {} \n FROM {} \n WHERE {};".format(",\n  ".join(column_names), normalized_table_name, ",\n  ".join(["{} AS {}".format(x[0], x[1]) for x in join_tables]), "\n  AND ".join(join_conditions))
-
+        print creation_string
+        sys.stdout.flush()
         cur.execute(creation_string);
         print "created table ", normalized_table_name
-        cur.execute("analyze {};".format(normalized_table_name));
+    cur.execute("analyze {};".format(normalized_table_name));
     return normalized_table_name
 
 def get_original_estimates(query_num, comb_number):
