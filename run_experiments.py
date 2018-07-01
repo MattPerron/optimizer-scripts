@@ -10,9 +10,10 @@ def main():
     use_nestloop = True
     use_seqscan = True
     index = 0
-    directory = "/home/ubuntu/join-order-benchmark/"
-    output_dir = "mssql_estimates_pg_cost"
-    with pg.connect('host=localhost user=ubuntu dbname=ubuntu') as conn, conn.cursor() as cur, open(os.path.join(output_dir, "aggregate_data.csv"), 'w', 1) as agg_data:
+    directory = "/data/mperron/join-order-benchmark"
+    output_dir = "denorm_estimates_brown"
+    with pg.connect('host=localhost user=mperron dbname=imdb') as conn, conn.cursor() as cur, open(os.path.join(output_dir, "aggregate_data.csv"), 'w', 1) as agg_data:
+        cur.execute('select 1;')
         agg_data.write("query_index, query_name, num_tables, perfect_estimates, new_plan, execution_time1, execution_time2\n")
         for fname_num in range(1, 34):
             for fname_letter in letters:
@@ -32,11 +33,17 @@ def main():
                     if counting:
                         max_table_count+=1
                 plans = [None for i in range(max_table_count+1)]
-                for estimate in range(max_table_count+1):
+                #for estimate in range(max_table_count, max_table_count+1):
+                for estimate in range(0, max_table_count+1):
+                #for estimate in range(4, 5):
                     print(filename, estimate) 
                     #explain once to get the plan
                     cur.execute("set current_test_query={};".format(index))
                     cur.execute("set perfect_estimates={};".format(estimate))
+                    cur.execute("set new_table_mapping_str to True")
+                    table_mapping = [hex(1<<x)[2:] for x in range(max_table_count)]
+                    #print(type(table_mapping), table_mapping)
+                    cur.execute("set table_mapping to '{}'".format(",".join(table_mapping)))
                     if simple_costs:
                         cur.execute("set seq_page_cost=0;")
                         cur.execute("set random_page_cost=0;")
